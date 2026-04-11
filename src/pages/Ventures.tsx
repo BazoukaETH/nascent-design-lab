@@ -88,7 +88,7 @@ const Ventures = () => {
     else { setVpDeals([...vpDeals, entry]); }
     setAddModal(false);
   }
-  function removeDeal(i: number) { setVpDeals(vpDeals.filter((_, idx) => idx !== i)); }
+  function removeDeal(i: number) { setPendingDelete({ type: "deal", index: i, name: vpDeals[i].name }); }
 
   function openAddPortfolio() { setPortfolioForm(emptyPortfolio); setEditPortfolioIdx(null); setPortfolioModal(true); }
   function openEditPortfolio(i: number) { setPortfolioForm({ ...portfolio[i] }); setEditPortfolioIdx(i); setPortfolioModal(true); }
@@ -97,7 +97,7 @@ const Ventures = () => {
     else { setPortfolio([...portfolio, portfolioForm]); }
     setPortfolioModal(false);
   }
-  function removePortfolio(i: number) { setPortfolio(portfolio.filter((_, idx) => idx !== i)); }
+  function removePortfolio(i: number) { setPendingDelete({ type: "portfolio", index: i, name: portfolio[i].name }); }
 
   const liveCount = ventures.filter(v => ["Live", "Building"].includes(v.stage)).length;
   const tabs: { id: TabKey; label: string }[] = [
