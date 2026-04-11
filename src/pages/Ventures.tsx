@@ -643,6 +643,22 @@ const Ventures = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!pendingDelete} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+        <DialogContent className="sm:max-w-[400px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Confirm Removal</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-xs">
+              Are you sure you want to remove <span className="font-semibold text-foreground">{pendingDelete?.name}</span>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDelete(null)} className="text-xs h-8">Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete} className="text-xs h-8">Remove</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
