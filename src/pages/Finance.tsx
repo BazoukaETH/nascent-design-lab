@@ -1,143 +1,363 @@
-const months = ["Oct 2025", "Nov 2025", "Dec 2025", "Jan 2026", "Feb 2026", "Mar 2026"];
+import { useState, useMemo } from "react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from "recharts";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const consolidatedPL = [
-  { line: "Revenue", values: ["680K", "720K", "810K", "790K", "830K", "862K"], bold: true },
-  { line: "  Solutions", values: ["520K", "540K", "590K", "580K", "600K", "620K"], bold: false },
-  { line: "  Education", values: ["55K", "62K", "70K", "72K", "78K", "85K"], bold: false },
-  { line: "  Paperwork (25%)", values: ["22K", "25K", "28K", "26K", "27K", "28K"], bold: false },
-  { line: "  Firewood", values: ["28K", "35K", "52K", "48K", "40K", "45K"], bold: false },
-  { line: "  Other", values: ["55K", "58K", "70K", "64K", "85K", "84K"], bold: false },
-  { line: "COGS", values: ["-290K", "-310K", "-340K", "-330K", "-350K", "-362K"], bold: false },
-  { line: "Gross Profit", values: ["390K", "410K", "470K", "460K", "480K", "500K"], bold: true },
-  { line: "Operating Expenses", values: ["-280K", "-285K", "-295K", "-290K", "-300K", "-310K"], bold: false },
-  { line: "Net Profit", values: ["110K", "125K", "175K", "170K", "180K", "190K"], bold: true },
+// ─── FINANCIAL DATA ───────────────────────────────────────────────────────────
+const DIN = [
+  { date: "2025-09-01", client: "SMG Automotive", venture: "Wasla Solutions", service: "Framer Website", amount: 300000, status: "Paid" },
+  { date: "2025-10-01", client: "PICO Engineering", venture: "Wasla Solutions", service: "Framer Website", amount: 200000, status: "50% Paid" },
+  { date: "2025-10-15", client: "Sports Alliance", venture: "Wasla Solutions", service: "Framer Website", amount: 25000, status: "Pending" },
+  { date: "2025-11-01", client: "ECMF", venture: "Wasla Solutions", service: "Subscriptions", amount: 120000, status: "Paid" },
+  { date: "2025-11-25", client: "Ekhdem", venture: "Wasla Solutions", service: "App Development", amount: 150000, status: "Paid" },
+  { date: "2026-01-15", client: "Hiba Abdo", venture: "Wasla Solutions", service: "Web Development", amount: 90000, status: "Pending" },
+  { date: "2026-01-26", client: "ECMF", venture: "Wasla Solutions", service: "Subscriptions", amount: 145000, status: "Paid" },
+  { date: "2026-02-10", client: "MW Fashion", venture: "Wasla Solutions", service: "Web Development", amount: 75000, status: "Pending" },
+  { date: "2026-02-14", client: "Test Client", venture: "Wasla Education", service: "Course", amount: 20000, status: "Paid" },
 ];
 
-const ventureBreakdown = [
-  { venture: "Wasla Solutions", revenue: "620K", costs: "380K", margin: "38.7%" },
-  { venture: "Wasla Education", revenue: "85K", costs: "42K", margin: "50.6%" },
-  { venture: "Paperwork Studio", revenue: "112K (25%: 28K)", costs: "78K", margin: "30.4%" },
-  { venture: "Firewood Egypt", revenue: "45K", costs: "28K", margin: "37.8%" },
-  { venture: "Wasla Tourism", revenue: "—", costs: "15K", margin: "—" },
-  { venture: "Wasla Labs", revenue: "—", costs: "25K", margin: "—" },
+const DOUT = [
+  { date: "2025-07-30", cat: "Salaries", venture: "Wasla Solutions", desc: "July Salary", vendor: "Usef Shazly", amount: 60000, bassel: "Yes" },
+  { date: "2025-08-30", cat: "Salaries", venture: "Wasla Solutions", desc: "August Salary", vendor: "Usef Shazly", amount: 60000, bassel: "Yes" },
+  { date: "2025-09-30", cat: "Salaries", venture: "Wasla Solutions", desc: "September Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
+  { date: "2025-09-30", cat: "Salaries", venture: "Wasla Solutions", desc: "September Salary", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
+  { date: "2025-09-30", cat: "Salaries", venture: "Wasla Solutions", desc: "September Salary", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
+  { date: "2025-10-30", cat: "Salaries", venture: "Wasla Solutions", desc: "October Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
+  { date: "2025-10-30", cat: "Salaries", venture: "Wasla Solutions", desc: "October Salary", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
+  { date: "2025-10-30", cat: "Salaries", venture: "Wasla Solutions", desc: "October Salary", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
+  { date: "2025-10-30", cat: "Freelancers", venture: "Wasla Solutions", desc: "Website Translation", vendor: "Merna Wagih", amount: 8000, bassel: "Yes" },
+  { date: "2025-11-30", cat: "Salaries", venture: "Wasla Solutions", desc: "November Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
+  { date: "2025-11-30", cat: "Salaries", venture: "Wasla Solutions", desc: "November Salary", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
+  { date: "2025-11-30", cat: "Salaries", venture: "Wasla Solutions", desc: "November Salary", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
+  { date: "2025-11-30", cat: "Hardware", venture: "Wasla Solutions", desc: "MacBook Air M1", vendor: "Tradeline", amount: 30000, bassel: "Yes" },
+  { date: "2025-12-30", cat: "Salaries", venture: "Wasla Solutions", desc: "December Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
+  { date: "2025-12-30", cat: "Salaries", venture: "Wasla Solutions", desc: "December Salary", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
+  { date: "2025-12-30", cat: "Salaries", venture: "Wasla Solutions", desc: "December Salary", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
+  { date: "2025-12-30", cat: "Freelancers", venture: "Wasla Solutions", desc: "Website Assistance", vendor: "Mohamed Yazan", amount: 10000, bassel: "Yes" },
+  { date: "2026-01-10", cat: "Subscriptions", venture: "Wasla Solutions", desc: "Figma Fees", vendor: "Moaz Sawy", amount: 6000, bassel: "Yes" },
+  { date: "2026-01-27", cat: "Salaries", venture: "Wasla Solutions", desc: "January Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
+  { date: "2026-01-27", cat: "Salaries", venture: "Wasla Solutions", desc: "January Fees", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
+  { date: "2026-01-27", cat: "Salaries", venture: "Wasla Solutions", desc: "January Fees", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
+  { date: "2026-01-28", cat: "Fees", venture: "Wasla Ventures", desc: "Legal Accountant Fees", vendor: "Wael Khalil", amount: 22000, bassel: "Yes" },
+  { date: "2026-02-03", cat: "Subscriptions", venture: "Wasla Solutions", desc: "ECMF Emails Dec/Jan", vendor: "Google Domains", amount: 30000, bassel: "Yes" },
+  { date: "2026-02-08", cat: "Subscriptions", venture: "Wasla Solutions", desc: "Figma / Framer", vendor: "Moaz Sawy", amount: 6850, bassel: "Yes" },
+  { date: "2026-02-10", cat: "Subscriptions", venture: "Wasla Ventures", desc: "Wasla Ventures Domain", vendor: "Moaz Sawy", amount: 1000, bassel: "No" },
 ];
 
-const clientPayments = [
-  { client: "Cairo Food Solutions", milestone: "Phase 1 delivery", amount: "175,000", due: "Apr 12", status: "Pending" },
-  { client: "EJB", milestone: "Month 2 retainer", amount: "25,000", due: "Apr 3", status: "Pending" },
-  { client: "Baraka Pharm", milestone: "April retainer", amount: "15,000", due: "Apr 1", status: "Upcoming" },
-  { client: "Cairo Food Solutions", milestone: "Final delivery", amount: "175,000", due: "Jun 15", status: "Upcoming" },
-];
+const PC = ["hsl(220,95%,47%)", "hsl(168,100%,42%)", "hsl(36,90%,53%)", "hsl(250,60%,60%)", "hsl(350,75%,50%)", "hsl(160,80%,40%)"];
 
-const paymentStatusColor: Record<string, string> = {
-  Paid: "text-green-600",
-  Pending: "text-yellow-600",
-  Upcoming: "text-muted-foreground",
-  Overdue: "text-red-600",
+const fmtE = (n: number) => { if (!n) return "0"; const a = Math.abs(n); if (a >= 1000000) return (n / 1000000).toFixed(2) + "M"; if (a >= 1000) return (n / 1000).toFixed(0) + "K"; return String(n); };
+const fmtF = (n: number) => "EGP " + Math.round(n).toLocaleString();
+const pMonth = (d: string) => { const p = d.split("-"); return p.length >= 2 && p[0].length === 4 ? p[0] + "-" + p[1].padStart(2, "0") : null; };
+const mLabel = (k: string) => { const [y, m] = k.split("-"); return new Date(+y, +m - 1).toLocaleDateString("en", { month: "short", year: "2-digit" }); };
+
+const ChartTip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-muted p-2 rounded-lg border border-border text-[11px]">
+      <div className="font-semibold text-muted-foreground/50 text-[10px] mb-1">{label}</div>
+      {payload.map((p: any, i: number) => (
+        <div key={i} className="flex items-center gap-1.5 mt-0.5">
+          <div className="w-1.5 h-1.5 rounded-full" style={{ background: p.color }} />
+          <span className="text-muted-foreground/60">{p.name}:</span>
+          <span className="font-semibold text-foreground">{fmtF(p.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
 };
 
+const KPI = ({ label, value, sub, color, prefix = "" }: { label: string; value: string; sub?: string; color: string; prefix?: string }) => (
+  <div className="bg-card rounded-xl p-4 border border-border relative overflow-hidden">
+    <div className="absolute top-0 left-0 w-[3px] h-full" style={{ background: color }} />
+    <div className="text-[9px] text-muted-foreground/50 font-bold uppercase tracking-wide mb-1">{label}</div>
+    <div className="text-xl font-bold text-foreground tracking-tight">{prefix}{value}</div>
+    {sub && <div className="text-[10px] text-muted-foreground/50 mt-0.5">{sub}</div>}
+  </div>
+);
+
+const StatusBadge = ({ status }: { status: string }) => {
+  const ok = status.toLowerCase() === "paid";
+  const partial = status.toLowerCase() === "50% paid";
+  const color = ok ? "hsl(160,80%,40%)" : partial ? "hsl(250,60%,60%)" : "hsl(36,90%,53%)";
+  return <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{ background: `${color}22`, color }}>{status}</span>;
+};
+
+const allVentures = ["All Ventures", ...Array.from(new Set([...DIN.map(r => r.venture), ...DOUT.map(r => r.venture)]))];
+
 const Finance = () => {
+  const [tab, setTab] = useState("overview");
+  const [ventureFilter, setVentureFilter] = useState("All Ventures");
+  const tabs = [
+    { id: "overview", l: "Overview" },
+    { id: "revenue", l: "Revenue" },
+    { id: "expenses", l: "Expenses" },
+    { id: "loans", l: "Loans" },
+  ];
+
+  const filteredIn = ventureFilter === "All Ventures" ? DIN : DIN.filter(r => r.venture === ventureFilter);
+  const filteredOut = ventureFilter === "All Ventures" ? DOUT : DOUT.filter(r => r.venture === ventureFilter);
+
+  const m = useMemo(() => {
+    let tR = 0, tE = 0, paid = 0, loans = 0;
+    for (const r of filteredIn) { tR += r.amount; if (r.status.toLowerCase() === "paid") paid += r.amount; }
+    for (const r of filteredOut) { tE += r.amount; if (r.bassel === "Yes") loans += r.amount; }
+    const pend = tR - paid, net = tR - tE;
+    const mm: Record<string, { r: number; e: number }> = {};
+    for (const r of filteredIn) { const k = pMonth(r.date); if (k) { if (!mm[k]) mm[k] = { r: 0, e: 0 }; mm[k].r += r.amount; } }
+    for (const r of filteredOut) { const k = pMonth(r.date); if (k) { if (!mm[k]) mm[k] = { r: 0, e: 0 }; mm[k].e += r.amount; } }
+    const monthly = Object.entries(mm).sort((a, b) => a[0].localeCompare(b[0])).map(([k, v]) => ({ month: mLabel(k), revenue: v.r, expenses: v.e, net: v.r - v.e }));
+    const ec: Record<string, number> = {};
+    for (const r of filteredOut) ec[r.cat] = (ec[r.cat] || 0) + r.amount;
+    const eb = Object.entries(ec).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value, pct: tE > 0 ? ((value / tE) * 100).toFixed(1) : "0" }));
+    const vm: Record<string, number> = {};
+    for (const r of filteredIn) vm[r.venture] = (vm[r.venture] || 0) + r.amount;
+    const vent = Object.entries(vm).filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
+    const cm: Record<string, number> = {};
+    for (const r of filteredIn) cm[r.client] = (cm[r.client] || 0) + r.amount;
+    const cli = Object.entries(cm).sort((a, b) => b[1] - a[1]).map(([name, value]) => ({ name, value }));
+    const sMonths: Record<string, boolean> = {};
+    const sT = filteredOut.filter(r => r.cat === "Salaries").reduce((s, r) => { const k = pMonth(r.date); if (k) sMonths[k] = true; return s + r.amount; }, 0);
+    const avgS = Object.keys(sMonths).length > 0 ? sT / Object.keys(sMonths).length : 0;
+    return { tR, tE, paid, pend, loans, net, monthly, eb, vent, cli, avgS };
+  }, [filteredIn, filteredOut]);
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Finance</h1>
-        <p className="text-sm text-muted-foreground mt-1">Consolidated financials · Source: Google Sheets</p>
-      </div>
-
-      {/* Top KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground">Cash on Hand</p>
-          <p className="text-lg font-semibold text-foreground tabular-nums mt-1">1,240,000 EGP</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground">Burn Rate</p>
-          <p className="text-lg font-semibold text-foreground tabular-nums mt-1">310,000/mo</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground">Runway</p>
-          <p className="text-lg font-semibold text-foreground tabular-nums mt-1">4.0 months</p>
-        </div>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-xs text-muted-foreground">Net Margin (Mar)</p>
-          <p className="text-lg font-semibold text-foreground tabular-nums mt-1">22.0%</p>
-        </div>
-      </div>
-
-      {/* Consolidated P&L */}
-      <div>
-        <h2 className="text-sm font-medium text-foreground mb-3">Consolidated P&L</h2>
-        <div className="bg-card border border-border rounded-lg overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left p-3 font-medium text-muted-foreground text-xs min-w-[160px]">Line Item</th>
-                {months.map((m) => (
-                  <th key={m} className="text-right p-3 font-medium text-muted-foreground text-xs min-w-[80px]">{m}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {consolidatedPL.map((row) => (
-                <tr key={row.line} className="border-b border-border last:border-0">
-                  <td className={`p-3 ${row.bold ? "font-medium text-foreground" : "text-muted-foreground"}`}>{row.line}</td>
-                  {row.values.map((v, i) => (
-                    <td key={i} className={`p-3 text-right tabular-nums ${row.bold ? "font-medium text-foreground" : "text-muted-foreground"}`}>{v}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Venture Breakdown */}
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-medium text-foreground mb-3">Venture Breakdown (March)</h2>
-          <div className="bg-card border border-border rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left p-3 font-medium text-muted-foreground text-xs">Venture</th>
-                  <th className="text-right p-3 font-medium text-muted-foreground text-xs">Revenue</th>
-                  <th className="text-right p-3 font-medium text-muted-foreground text-xs">Costs</th>
-                  <th className="text-right p-3 font-medium text-muted-foreground text-xs">Margin</th>
-                </tr>
-              </thead>
-              <tbody>
-                {ventureBreakdown.map((v) => (
-                  <tr key={v.venture} className="border-b border-border last:border-0">
-                    <td className="p-3 text-foreground">{v.venture}</td>
-                    <td className="p-3 text-right text-muted-foreground tabular-nums">{v.revenue}</td>
-                    <td className="p-3 text-right text-muted-foreground tabular-nums">{v.costs}</td>
-                    <td className="p-3 text-right text-muted-foreground tabular-nums">{v.margin}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <h1 className="text-xl font-bold text-foreground tracking-tight">Finance Engine</h1>
+          <p className="text-xs text-muted-foreground mt-1">Consolidated P&L · Synced from Google Sheets</p>
+        </div>
+        <Select value={ventureFilter} onValueChange={setVentureFilter}>
+          <SelectTrigger className="w-[200px] h-8 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {allVentures.map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-0 border-b border-border">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} className={`px-4 py-2 text-[11px] font-medium transition-colors border-b-2 ${tab === t.id ? "text-secondary border-secondary" : "text-muted-foreground border-transparent hover:text-foreground"}`}>
+            {t.l}
+          </button>
+        ))}
+      </div>
+
+      {tab === "overview" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            <KPI label="Total Revenue" value={fmtE(m.tR)} sub={`${filteredIn.length} txns`} color="hsl(220,95%,47%)" prefix="EGP " />
+            <KPI label="Total Expenses" value={fmtE(m.tE)} sub={`${filteredOut.length} items`} color="hsl(350,75%,50%)" prefix="EGP " />
+            <KPI label="Net Position" value={fmtE(m.net)} color={m.net >= 0 ? "hsl(160,80%,40%)" : "hsl(350,75%,50%)"} prefix="EGP " />
+            <KPI label="Collected" value={fmtE(m.paid)} sub={`${fmtE(m.pend)} pending`} color="hsl(168,100%,42%)" prefix="EGP " />
+            <KPI label="Loans Owed" value={fmtE(m.loans)} sub="To Bassel" color="hsl(36,90%,53%)" prefix="EGP " />
+            <KPI label="Monthly Salary" value={fmtE(m.avgS)} sub="Avg burn" color="hsl(250,60%,60%)" prefix="EGP " />
           </div>
-        </div>
-
-        {/* Client Payments */}
-        <div>
-          <h2 className="text-sm font-medium text-foreground mb-3">Upcoming Client Payments</h2>
-          <div className="bg-card border border-border rounded-lg divide-y divide-border">
-            {clientPayments.map((p, i) => (
-              <div key={i} className="p-3 flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-foreground">{p.client}</p>
-                  <p className="text-xs text-muted-foreground">{p.milestone} · Due {p.due}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-medium text-foreground tabular-nums">{p.amount} EGP</p>
-                  <p className={`text-xs ${paymentStatusColor[p.status]}`}>{p.status}</p>
-                </div>
+          <div className="grid lg:grid-cols-[5fr_3fr] gap-3">
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="text-xs font-semibold text-foreground mb-0.5">Revenue vs Expenses</div>
+              <div className="text-[10px] text-muted-foreground/50 mb-3">Monthly</div>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={m.monthly} barGap={2} barSize={14}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.04)" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(220,15%,38%)" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 9, fill: "hsl(220,15%,38%)" }} axisLine={false} tickLine={false} tickFormatter={v => (v / 1000).toFixed(0) + "K"} />
+                  <Tooltip content={<ChartTip />} />
+                  <Bar dataKey="revenue" name="Revenue" fill="hsl(220,95%,47%)" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="expenses" name="Expenses" fill="rgba(240,64,96,.45)" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="text-xs font-semibold text-foreground mb-0.5">Expense Split</div>
+              <div className="text-[10px] text-muted-foreground/50 mb-3">By category</div>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie data={m.eb} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={62} paddingAngle={3} strokeWidth={0}>
+                    {m.eb.map((_, i) => <Cell key={i} fill={PC[i % PC.length]} />)}
+                  </Pie>
+                  <Tooltip content={<ChartTip />} />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-x-2 gap-y-1 justify-center mt-1">
+                {m.eb.map((e, i) => (
+                  <div key={i} className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                    <div className="w-1.5 h-1.5 rounded-sm" style={{ background: PC[i % PC.length] }} />
+                    {e.name} {e.pct}%
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="text-xs font-semibold text-foreground mb-0.5">Net Income Trend</div>
+            <div className="text-[10px] text-muted-foreground/50 mb-3">Monthly P&L movement</div>
+            <ResponsiveContainer width="100%" height={170}>
+              <AreaChart data={m.monthly}>
+                <defs>
+                  <linearGradient id="ng2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="hsl(168,100%,42%)" stopOpacity={0.2} />
+                    <stop offset="100%" stopColor="hsl(168,100%,42%)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.04)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(220,15%,38%)" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 9, fill: "hsl(220,15%,38%)" }} axisLine={false} tickLine={false} tickFormatter={v => (v / 1000).toFixed(0) + "K"} />
+                <Tooltip content={<ChartTip />} />
+                <Area type="monotone" dataKey="net" name="Net" stroke="hsl(168,100%,42%)" fill="url(#ng2)" strokeWidth={2} dot={{ r: 3, fill: "hsl(168,100%,42%)", strokeWidth: 0 }} />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      </div>
+      )}
+
+      {tab === "revenue" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-2.5">
+            <KPI label="Total Invoiced" value={fmtE(m.tR)} color="hsl(220,95%,47%)" prefix="EGP " />
+            <KPI label="Collected" value={fmtE(m.paid)} color="hsl(160,80%,40%)" prefix="EGP " />
+            <KPI label="Pending" value={fmtE(m.pend)} color="hsl(36,90%,53%)" prefix="EGP " />
+          </div>
+          <div className="grid lg:grid-cols-2 gap-3">
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="text-xs font-semibold text-foreground mb-3">By Venture</div>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={m.vent} layout="vertical" barSize={13}>
+                  <XAxis type="number" tick={{ fontSize: 9, fill: "hsl(220,15%,38%)" }} axisLine={false} tickLine={false} tickFormatter={v => (v / 1000).toFixed(0) + "K"} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(215,20%,55%)" }} axisLine={false} tickLine={false} width={120} />
+                  <Tooltip content={<ChartTip />} />
+                  <Bar dataKey="value" name="Revenue" fill="hsl(220,95%,47%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="text-xs font-semibold text-foreground mb-3">By Client</div>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={m.cli} layout="vertical" barSize={13}>
+                  <XAxis type="number" tick={{ fontSize: 9, fill: "hsl(220,15%,38%)" }} axisLine={false} tickLine={false} tickFormatter={v => (v / 1000).toFixed(0) + "K"} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10, fill: "hsl(215,20%,55%)" }} axisLine={false} tickLine={false} width={120} />
+                  <Tooltip content={<ChartTip />} />
+                  <Bar dataKey="value" name="Revenue" fill="hsl(168,100%,42%)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="text-xs font-semibold text-foreground mb-3">All Transactions</div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px]">
+                <thead>
+                  <tr className="border-b border-border">
+                    {["Date", "Client", "Venture", "Service", "Amount", "Status"].map(h => (
+                      <th key={h} className="text-left p-2 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredIn.map((r, i) => (
+                    <tr key={i} className="border-b border-border/30">
+                      <td className="p-2 text-muted-foreground/50">{r.date}</td>
+                      <td className="p-2 font-semibold text-foreground">{r.client}</td>
+                      <td className="p-2 text-muted-foreground">{r.venture}</td>
+                      <td className="p-2 text-muted-foreground">{r.service}</td>
+                      <td className="p-2 font-semibold text-foreground">{fmtF(r.amount)}</td>
+                      <td className="p-2"><StatusBadge status={r.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "expenses" && (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-2.5">
+            <KPI label="Total Expenses" value={fmtE(m.tE)} color="hsl(350,75%,50%)" prefix="EGP " />
+            <KPI label="Monthly Avg Burn" value={fmtE(m.avgS)} sub="Salary component" color="hsl(36,90%,53%)" prefix="EGP " />
+            <KPI label="Expense Items" value={String(filteredOut.length)} sub="All categories" color="hsl(250,60%,60%)" />
+          </div>
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="text-xs font-semibold text-foreground mb-3">All Expenses</div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px]">
+                <thead>
+                  <tr className="border-b border-border">
+                    {["Date", "Category", "Description", "Vendor", "Amount", "Venture", "By Bassel"].map(h => (
+                      <th key={h} className="text-left p-2 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOut.map((r, i) => (
+                    <tr key={i} className="border-b border-border/30">
+                      <td className="p-2 text-muted-foreground/50">{r.date}</td>
+                      <td className="p-2 font-semibold text-foreground">{r.cat}</td>
+                      <td className="p-2 text-muted-foreground">{r.desc}</td>
+                      <td className="p-2 text-muted-foreground">{r.vendor}</td>
+                      <td className="p-2 font-semibold text-foreground">{fmtF(r.amount)}</td>
+                      <td className="p-2 text-muted-foreground">{r.venture}</td>
+                      <td className="p-2">{r.bassel === "Yes" && <span className="text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "hsl(36,90%,53%,0.12)", color: "hsl(36,90%,53%)" }}>Yes</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {tab === "loans" && (() => {
+        const entries = filteredOut.filter(r => r.bassel === "Yes");
+        const total = entries.reduce((s, r) => s + r.amount, 0);
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-2.5">
+              <KPI label="Total Loaned" value={fmtE(total)} sub={`${entries.length} entries`} color="hsl(36,90%,53%)" prefix="EGP " />
+              <KPI label="Repayments" value="0" sub="None recorded yet" color="hsl(160,80%,40%)" prefix="EGP " />
+              <KPI label="Outstanding" value={fmtE(total)} sub="Owed to Bassel" color="hsl(350,75%,50%)" prefix="EGP " />
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="text-xs font-semibold text-foreground mb-3">Loan Ledger</div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px]">
+                  <thead>
+                    <tr className="border-b border-border">
+                      {["Date", "Category", "Description", "Vendor", "Amount", "Venture"].map(h => (
+                        <th key={h} className="text-left p-2 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((r, i) => (
+                      <tr key={i} className="border-b border-border/30">
+                        <td className="p-2 text-muted-foreground/50">{r.date}</td>
+                        <td className="p-2 font-semibold text-foreground">{r.cat}</td>
+                        <td className="p-2 text-muted-foreground">{r.desc}</td>
+                        <td className="p-2 text-muted-foreground">{r.vendor}</td>
+                        <td className="p-2 font-semibold" style={{ color: "hsl(36,90%,53%)" }}>{fmtF(r.amount)}</td>
+                        <td className="p-2 text-muted-foreground">{r.venture}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border">
+                      <td colSpan={4} className="p-2 text-right font-bold text-muted-foreground text-[11px]">TOTAL OUTSTANDING</td>
+                      <td className="p-2 font-bold text-[13px]" style={{ color: "hsl(350,75%,50%)" }}>{fmtF(total)}</td>
+                      <td></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

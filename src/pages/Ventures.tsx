@@ -1,346 +1,296 @@
 import { useState } from "react";
-import { ChevronRight, Users, FileText, CheckSquare } from "lucide-react";
+import { VENTURES_DATA, PORTFOLIO_DATA, VENTURE_PIPELINE_SEED, STAGE_OPTS, STAGE_COLORS, DEAL_COLORS } from "@/data/ventures";
+import type { VenturePipelineDeal } from "@/data/ventures";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 
-interface Venture {
-  name: string;
-  stage: string;
-  category: string;
-  owner: string;
-  thesis: string;
-  northStar: { metric: string; value: string; trend: string };
-  team: string[];
-  milestones: { label: string; date: string; done: boolean }[];
-  revenue: string;
-  costs: string;
-  margin: string;
-  notes: string[];
-}
-
-const ventures: Venture[] = [
-  {
-    name: "Wasla Solutions",
-    stage: "Live",
-    category: "Services",
-    owner: "Bassel El Aroussy",
-    thesis: "Full-service digital agency serving mid-market Egyptian businesses",
-    northStar: { metric: "Monthly Recurring Revenue", value: "620,000 EGP", trend: "+12%" },
-    team: ["Moaz El Sawy", "Mohamed El Hagry", "Youssef El Shazly", "Hussein Shahbender", "Saif Nosair"],
-    milestones: [
-      { label: "First client signed", date: "2024-06", done: true },
-      { label: "5 active clients", date: "2025-01", done: true },
-      { label: "10 active retainers", date: "2026-06", done: false },
-    ],
-    revenue: "620,000 EGP/mo",
-    costs: "380,000 EGP/mo",
-    margin: "38.7%",
-    notes: ["Focus on retainer model over project-based", "Exploring partnerships with SMG"],
-  },
-  {
-    name: "Wasla Education",
-    stage: "Live",
-    category: "Education",
-    owner: "Bassel El Aroussy",
-    thesis: "Tech-enabled education and training programs",
-    northStar: { metric: "Active Students", value: "240", trend: "+18%" },
-    team: ["Youssef El Shazly"],
-    milestones: [
-      { label: "Platform launch", date: "2025-03", done: true },
-      { label: "500 students", date: "2026-09", done: false },
-    ],
-    revenue: "85,000 EGP/mo",
-    costs: "42,000 EGP/mo",
-    margin: "50.6%",
-    notes: ["Strong organic growth from social media"],
-  },
-  {
-    name: "Paperwork Studio",
-    stage: "Live",
-    category: "Creative Agency",
-    owner: "Ali Amir",
-    thesis: "Premium creative and branding studio (25% owned by Wasla)",
-    northStar: { metric: "Monthly Revenue", value: "112,000 EGP", trend: "+5%" },
-    team: ["Ali Amir", "Saif Nosair"],
-    milestones: [
-      { label: "Studio established", date: "2024-09", done: true },
-      { label: "Standalone profitability", date: "2025-12", done: true },
-    ],
-    revenue: "112,000 EGP/mo",
-    costs: "78,000 EGP/mo",
-    margin: "30.4%",
-    notes: ["Cross-selling with Wasla Solutions clients"],
-  },
-  {
-    name: "Wasla Tourism",
-    stage: "Early Stage",
-    category: "Marketplace",
-    owner: "Bassel El Aroussy",
-    thesis: "Digital marketplace connecting tourists with local Egyptian experiences",
-    northStar: { metric: "Bookings", value: "0", trend: "—" },
-    team: [],
-    milestones: [
-      { label: "Market research complete", date: "2026-02", done: true },
-      { label: "MVP launch", date: "2026-08", done: false },
-    ],
-    revenue: "—",
-    costs: "15,000 EGP/mo",
-    margin: "—",
-    notes: ["Exploring partnerships with hotels in Hurghada"],
-  },
-  {
-    name: "Wasla Labs",
-    stage: "Early Stage",
-    category: "R&D",
-    owner: "Ahmed Nehad",
-    thesis: "Internal R&D arm for experimental products and technology",
-    northStar: { metric: "Experiments Running", value: "2", trend: "—" },
-    team: ["Ahmed Nehad", "Moaz El Sawy"],
-    milestones: [
-      { label: "Wasla OS v1 spec", date: "2026-03", done: true },
-      { label: "First internal tool shipped", date: "2026-06", done: false },
-    ],
-    revenue: "—",
-    costs: "25,000 EGP/mo",
-    margin: "—",
-    notes: ["Wasla OS is the first Labs project"],
-  },
-  {
-    name: "Wasla Space",
-    stage: "Discovery",
-    category: "Membership/Co-working",
-    owner: "Bassel El Aroussy",
-    thesis: "Co-working and community space for creative professionals in Cairo",
-    northStar: { metric: "Members", value: "0", trend: "—" },
-    team: [],
-    milestones: [
-      { label: "Location scouting", date: "2026-04", done: false },
-    ],
-    revenue: "—",
-    costs: "—",
-    margin: "—",
-    notes: ["Evaluating Maadi and Zamalek locations"],
-  },
-  {
-    name: "Wasla Bank",
-    stage: "Long-term Vision",
-    category: "Fintech",
-    owner: "Bassel El Aroussy",
-    thesis: "Super app / neobank for Egyptian SMEs",
-    northStar: { metric: "—", value: "—", trend: "—" },
-    team: [],
-    milestones: [],
-    revenue: "—",
-    costs: "—",
-    margin: "—",
-    notes: ["Long-term play, monitoring regulatory landscape"],
-  },
-  {
-    name: "Data Egypt",
-    stage: "Concept",
-    category: "Media/Data",
-    owner: "Bassel El Aroussy",
-    thesis: "Data-driven media platform for Egyptian market intelligence",
-    northStar: { metric: "—", value: "—", trend: "—" },
-    team: ["Hussein Shahbender"],
-    milestones: [
-      { label: "Concept validation", date: "2026-06", done: false },
-    ],
-    revenue: "—",
-    costs: "—",
-    margin: "—",
-    notes: ["Exploring data partnerships"],
-  },
-  {
-    name: "AgriWasla",
-    stage: "Prototype",
-    category: "Agri Marketplace",
-    owner: "Bassel El Aroussy",
-    thesis: "B2B marketplace connecting farmers with restaurants and retailers",
-    northStar: { metric: "GMV", value: "0", trend: "—" },
-    team: [],
-    milestones: [
-      { label: "Prototype built", date: "2026-05", done: false },
-    ],
-    revenue: "—",
-    costs: "10,000 EGP/mo",
-    margin: "—",
-    notes: ["Testing with 3 farms in Fayoum"],
-  },
-  {
-    name: "Firewood Egypt",
-    stage: "Live",
-    category: "E-commerce",
-    owner: "Bassel El Aroussy",
-    thesis: "Premium firewood and charcoal e-commerce brand",
-    northStar: { metric: "Monthly Orders", value: "87", trend: "+22%" },
-    team: [],
-    milestones: [
-      { label: "Shopify store launch", date: "2025-10", done: true },
-      { label: "100 orders/month", date: "2026-05", done: false },
-    ],
-    revenue: "45,000 EGP/mo",
-    costs: "28,000 EGP/mo",
-    margin: "37.8%",
-    notes: ["Strong winter season performance"],
-  },
-];
-
-const stageColor: Record<string, string> = {
-  Live: "bg-green-100 text-green-800",
-  "Early Stage": "bg-yellow-100 text-yellow-800",
-  Discovery: "bg-blue-100 text-blue-800",
-  "Long-term Vision": "bg-gray-100 text-gray-600",
-  Concept: "bg-gray-100 text-gray-600",
-  Prototype: "bg-orange-100 text-orange-800",
-};
+const StageBadge = ({ stage, color }: { stage: string; color: string }) => (
+  <span
+    className="text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wide uppercase"
+    style={{ background: `${color}22`, color }}
+  >
+    {stage}
+  </span>
+);
 
 const Ventures = () => {
   const [selected, setSelected] = useState<string | null>(null);
-  const selectedVenture = ventures.find((v) => v.name === selected);
+  const [vpDeals, setVpDeals] = useState<VenturePipelineDeal[]>(VENTURE_PIPELINE_SEED);
+  const [addModal, setAddModal] = useState(false);
+  const [editIdx, setEditIdx] = useState<number | null>(null);
+  const emptyForm: VenturePipelineDeal = {
+    name: "", stage: "Sourcing", type: "", sector: "", size: "TBD", stake: "TBD",
+    valuation: "TBD", source: "", notes: "", thesis: "", owner: "Bassel El Aroussy",
+    updated: "", color: "hsl(220, 95%, 47%)",
+  };
+  const [form, setForm] = useState<VenturePipelineDeal>(emptyForm);
+
+  function openAdd() { setForm(emptyForm); setEditIdx(null); setAddModal(true); }
+  function openEdit(i: number) { setForm({ ...vpDeals[i] }); setEditIdx(i); setAddModal(true); }
+  function saveForm() {
+    const today = new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+    const entry = { ...form, updated: today };
+    if (editIdx !== null) {
+      const updated = [...vpDeals]; updated[editIdx] = entry; setVpDeals(updated);
+    } else {
+      setVpDeals([...vpDeals, entry]);
+    }
+    setAddModal(false);
+  }
+  function removeDeal(i: number) { setVpDeals(vpDeals.filter((_, idx) => idx !== i)); }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Ventures</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          {ventures.length} subsidiaries & initiatives under Wasla Ventures
-        </p>
+        <h1 className="text-xl font-bold text-foreground tracking-tight">Ventures & Portfolio</h1>
+        <p className="text-xs text-muted-foreground mt-1">All active arms + strategic holdings under Wasla Ventures</p>
       </div>
 
-      {!selectedVenture ? (
+      {/* ─── SECTION 1: Active Ventures ─── */}
+      <div>
+        <div className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-[0.06em] mb-3">Active Ventures</div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {ventures.map((v) => (
-            <button
-              key={v.name}
-              onClick={() => setSelected(v.name)}
-              className="bg-card border border-border rounded-lg p-4 text-left hover:border-primary/30 transition-colors"
+          {VENTURES_DATA.map((v) => (
+            <div
+              key={v.id}
+              onClick={() => setSelected(selected === v.id ? null : v.id)}
+              className="bg-card rounded-xl p-4 cursor-pointer transition-all duration-200"
+              style={{
+                border: `1px solid ${selected === v.id ? v.color : 'hsl(220, 25%, 16%)'}`,
+                boxShadow: selected === v.id ? `0 0 0 1px ${v.color}44` : 'none',
+              }}
             >
-              <div className="flex items-start justify-between mb-2">
-                <h3 className="font-medium text-foreground">{v.name}</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${stageColor[v.stage] || "bg-muted text-muted-foreground"}`}>
-                  {v.stage}
-                </span>
+              <div className="flex items-start justify-between mb-2.5">
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ background: v.color }} />
+                <StageBadge stage={v.stage} color={v.stageColor} />
               </div>
-              <p className="text-xs text-muted-foreground mb-3">{v.category} · {v.owner}</p>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground tabular-nums">{v.revenue !== "—" ? v.revenue : "Pre-revenue"}</span>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              <div className="text-[13px] font-bold text-foreground mb-0.5">{v.name}</div>
+              <div className="text-[10px] text-muted-foreground mb-2.5 line-clamp-2 leading-relaxed">{v.desc.slice(0, 80)}...</div>
+              <div className="flex gap-1.5 text-[9px] text-muted-foreground/60">
+                <span>Owner: <span className="text-muted-foreground">{v.owner.split(" ")[0]}</span></span>
+                <span>·</span>
+                <span>{v.metric}</span>
               </div>
-            </button>
+
+              {/* Expanded detail */}
+              {selected === v.id && (
+                <div className="mt-3.5 pt-3.5 border-t border-border space-y-3">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">{v.desc}</p>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-muted rounded-lg p-2.5">
+                      <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">Model</div>
+                      <div className="text-[10px] text-foreground font-medium mt-0.5">{v.model}</div>
+                    </div>
+                    <div className="bg-muted rounded-lg p-2.5">
+                      <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">North Star</div>
+                      <div className="text-[10px] text-foreground font-medium mt-0.5">{v.northStar}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wide font-semibold mb-1.5">Milestones</div>
+                    {v.milestones.map((m, mi) => (
+                      <div key={mi} className="flex gap-2 mb-1">
+                        <div className="w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ background: v.color }} />
+                        <span className="text-[10px] text-muted-foreground">{m}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-[10px] text-warning">⚠ {v.risks}</div>
+                  <div className="text-[10px] text-green-400">→ Next: {v.next}</div>
+
+                  <div className="flex gap-1 flex-wrap">
+                    {v.services.map((s, si) => (
+                      <span key={si} className="text-[9px] bg-muted px-2 py-0.5 rounded text-muted-foreground">{s}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ))}
         </div>
-      ) : (
-        <div className="space-y-6">
-          <button onClick={() => setSelected(null)} className="text-sm text-primary hover:underline">
-            ← Back to all ventures
-          </button>
+      </div>
 
-          {/* Header */}
-          <div className="bg-card border border-border rounded-lg p-5">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">{selectedVenture.name}</h2>
-                <p className="text-sm text-muted-foreground mt-1">{selectedVenture.thesis}</p>
+      {/* Strategic Portfolio */}
+      <div>
+        <div className="text-[11px] font-semibold text-muted-foreground/50 uppercase tracking-[0.06em] mb-3">Strategic Portfolio & Holdings</div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {PORTFOLIO_DATA.map((p) => (
+            <div key={p.name} className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-start justify-between mb-2.5">
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ background: p.color }} />
+                <StageBadge stage={p.status} color={p.status === "Active" || p.status === "Confirmed" ? "hsl(160, 80%, 40%)" : "hsl(36, 90%, 53%)"} />
               </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${stageColor[selectedVenture.stage] || "bg-muted text-muted-foreground"}`}>
-                {selectedVenture.stage}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground">{selectedVenture.category} · Owner: {selectedVenture.owner}</p>
-          </div>
-
-          {/* North Star */}
-          <div className="bg-card border border-border rounded-lg p-5">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">North Star Metric</h3>
-            <p className="text-sm text-muted-foreground">{selectedVenture.northStar.metric}</p>
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="text-2xl font-semibold text-foreground tabular-nums">{selectedVenture.northStar.value}</span>
-              {selectedVenture.northStar.trend !== "—" && (
-                <span className="text-sm text-green-600">{selectedVenture.northStar.trend}</span>
-              )}
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Financial Summary */}
-            <div className="bg-card border border-border rounded-lg p-5">
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Financial Summary</h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Revenue</span>
-                  <span className="text-foreground tabular-nums">{selectedVenture.revenue}</span>
+              <div className="text-[13px] font-bold text-foreground mb-0.5">{p.name}</div>
+              <div className="text-[10px] text-muted-foreground mb-3 leading-relaxed">{p.desc}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-muted rounded-md p-2">
+                  <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">Stake</div>
+                  <div className="text-xs font-bold mt-0.5" style={{ color: p.color }}>{p.stake}</div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Costs</span>
-                  <span className="text-foreground tabular-nums">{selectedVenture.costs}</span>
-                </div>
-                <div className="flex justify-between pt-2 border-t border-border">
-                  <span className="text-foreground font-medium">Margin</span>
-                  <span className="text-foreground font-medium tabular-nums">{selectedVenture.margin}</span>
+                <div className="bg-muted rounded-md p-2">
+                  <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">Invested</div>
+                  <div className="text-xs font-bold text-foreground mt-0.5">{p.invested}</div>
                 </div>
               </div>
             </div>
+          ))}
+        </div>
+      </div>
 
-            {/* Team */}
-            <div className="bg-card border border-border rounded-lg p-5">
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-                <Users className="w-3.5 h-3.5" /> Team ({selectedVenture.team.length})
-              </h3>
-              {selectedVenture.team.length > 0 ? (
-                <div className="space-y-2">
-                  {selectedVenture.team.map((t) => (
-                    <div key={t} className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
-                        {t.split(" ").map(n => n[0]).join("").slice(0, 2)}
-                      </div>
-                      <span className="text-sm text-foreground">{t}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No team assigned yet</p>
-              )}
-            </div>
+      {/* ─── SECTION 2: Venture Pipeline ─── */}
+      <div>
+        <div className="flex items-baseline justify-between mb-3">
+          <div>
+            <h2 className="text-base font-bold text-foreground">Venture Pipeline</h2>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Investment opportunities, acquisitions, and strategic deals being tracked</p>
           </div>
-
-          {/* Milestones */}
-          <div className="bg-card border border-border rounded-lg p-5">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-              <CheckSquare className="w-3.5 h-3.5" /> Milestones
-            </h3>
-            {selectedVenture.milestones.length > 0 ? (
-              <div className="space-y-2">
-                {selectedVenture.milestones.map((m, i) => (
-                  <div key={i} className="flex items-center gap-3 text-sm">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${m.done ? "bg-green-500" : "bg-muted-foreground/30"}`} />
-                    <span className={m.done ? "text-muted-foreground line-through" : "text-foreground"}>{m.label}</span>
-                    <span className="text-xs text-muted-foreground ml-auto">{m.date}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No milestones defined yet</p>
-            )}
-          </div>
-
-          {/* Notes */}
-          <div className="bg-card border border-border rounded-lg p-5">
-            <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-1.5">
-              <FileText className="w-3.5 h-3.5" /> Notes & Decisions
-            </h3>
-            {selectedVenture.notes.length > 0 ? (
-              <ul className="space-y-1.5">
-                {selectedVenture.notes.map((n, i) => (
-                  <li key={i} className="text-sm text-foreground flex gap-2">
-                    <span className="text-muted-foreground">•</span> {n}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-muted-foreground">No notes yet</p>
-            )}
+          <div className="flex gap-1.5">
+            {STAGE_OPTS.map((s) => (
+              <span key={s} className="text-[9px] px-2 py-0.5 rounded font-semibold" style={{ background: `${STAGE_COLORS[s]}22`, color: STAGE_COLORS[s] }}>{s}</span>
+            ))}
           </div>
         </div>
-      )}
+
+        <div className="space-y-2">
+          {vpDeals.map((deal, i) => {
+            const stageClr = STAGE_COLORS[deal.stage] || "hsl(220, 15%, 38%)";
+            const highlighted = deal.stage === "Negotiating";
+            return (
+              <div key={i} className="bg-card rounded-xl p-4" style={{ border: `1px solid ${highlighted ? stageClr + '55' : 'hsl(220, 25%, 16%)'}` }}>
+                <div className="flex items-start gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: deal.color }} />
+                      <span className="text-[13px] font-bold text-foreground">{deal.name}</span>
+                      <span className="text-[9px] px-2 py-0.5 rounded font-semibold" style={{ background: `${stageClr}22`, color: stageClr }}>{deal.stage}</span>
+                      <span className="text-[9px] text-muted-foreground/50">{deal.type}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground leading-relaxed mb-1">{deal.notes}</div>
+                    <div className="text-[10px] text-muted-foreground/50 italic">Thesis: {deal.thesis}</div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 shrink-0 w-[280px]">
+                    {[
+                      { label: "SECTOR", value: deal.sector, color: "text-foreground" },
+                      { label: "SIZE", value: deal.size, style: { color: deal.color } },
+                      { label: "TARGET STAKE", value: deal.stake, color: "text-foreground" },
+                    ].map((b) => (
+                      <div key={b.label} className="bg-muted rounded-md p-2">
+                        <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide mb-0.5">{b.label}</div>
+                        <div className={`text-[10px] font-semibold ${b.color || ''}`} style={b.style}>{b.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-3 mt-2.5 pt-2.5 border-t border-border items-center text-[9px]">
+                  <span className="text-muted-foreground/50">Owner: <span className="text-muted-foreground">{deal.owner.split(" ")[0]}</span></span>
+                  <span className="text-muted-foreground/50">Source: <span className="text-muted-foreground">{deal.source}</span></span>
+                  <span className="text-muted-foreground/50">Valuation: <span className="text-muted-foreground">{deal.valuation}</span></span>
+                  <span className="text-muted-foreground/50 ml-auto">Updated: {deal.updated}</span>
+                  <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5" onClick={() => openEdit(i)}>
+                    <Pencil className="w-3 h-3 mr-1" /> Edit
+                  </Button>
+                  <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => removeDeal(i)}>
+                    <Trash2 className="w-3 h-3 mr-1" /> Remove
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Add new deal button */}
+          <button
+            onClick={openAdd}
+            className="w-full bg-transparent border border-dashed border-border rounded-xl p-3.5 flex items-center gap-2.5 hover:border-primary/50 transition-colors"
+          >
+            <Plus className="w-4 h-4 text-muted-foreground/50" />
+            <span className="text-[11px] text-muted-foreground/50">Add new deal or opportunity</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Add/Edit Deal Dialog */}
+      <Dialog open={addModal} onOpenChange={setAddModal}>
+        <DialogContent className="sm:max-w-[560px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>{editIdx !== null ? "Edit Deal" : "Add New Deal"}</DialogTitle>
+            <p className="text-[11px] text-muted-foreground">Track a new investment opportunity or strategic deal</p>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Deal / Company Name *</label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Myfitnessbag" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Stage</label>
+              <Select value={form.stage} onValueChange={(v) => setForm({ ...form, stage: v })}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>{STAGE_OPTS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Deal Type</label>
+              <Input value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} placeholder="e.g. Investment, Acquisition" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Sector</label>
+              <Input value={form.sector} onChange={(e) => setForm({ ...form, sector: e.target.value })} placeholder="e.g. Health & Wellness" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Investment Size</label>
+              <Input value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} placeholder="e.g. 200K EGP" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Target Stake</label>
+              <Input value={form.stake} onChange={(e) => setForm({ ...form, stake: e.target.value })} placeholder="e.g. 20%" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Implied Valuation</label>
+              <Input value={form.valuation} onChange={(e) => setForm({ ...form, valuation: e.target.value })} placeholder="e.g. ~1M EGP" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Source</label>
+              <Input value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })} placeholder="e.g. Network referral" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Owner</label>
+              <Input value={form.owner} onChange={(e) => setForm({ ...form, owner: e.target.value })} className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Accent Color</label>
+              <div className="flex gap-1.5 mt-1">
+                {DEAL_COLORS.map((c) => (
+                  <div
+                    key={c}
+                    onClick={() => setForm({ ...form, color: c })}
+                    className="w-5 h-5 rounded cursor-pointer transition-all"
+                    style={{ background: c, border: form.color === c ? "2px solid white" : "2px solid transparent" }}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground font-medium">Notes</label>
+            <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Deal context, current status..." className="text-xs min-h-[60px]" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground font-medium">Investment Thesis</label>
+            <Textarea value={form.thesis} onChange={(e) => setForm({ ...form, thesis: e.target.value })} placeholder="Why this deal fits Wasla's strategy..." className="text-xs min-h-[50px]" />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setAddModal(false)} className="text-xs h-8">Cancel</Button>
+            <Button onClick={saveForm} disabled={!form.name.trim()} className="text-xs h-8">{editIdx !== null ? "Save Changes" : "Add Deal"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
