@@ -77,7 +77,7 @@ const Ventures = () => {
     else { setVentures([...ventures, entry]); }
     setVentureModal(false);
   }
-  function removeVenture(i: number) { setVentures(ventures.filter((_, idx) => idx !== i)); }
+  function removeVenture(i: number) { setPendingDelete({ type: "venture", index: i, name: ventures[i].name }); }
 
   function openAdd() { setForm(emptyForm); setEditIdx(null); setAddModal(true); }
   function openEdit(i: number) { setForm({ ...vpDeals[i] }); setEditIdx(i); setAddModal(true); }
