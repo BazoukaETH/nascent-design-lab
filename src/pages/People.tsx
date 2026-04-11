@@ -114,6 +114,82 @@ const People = () => {
         ))}
       </div>
 
+      {/* Compensation Summary */}
+      {(() => {
+        const salaryExpenses = EXPENSE_DATA.filter(e => e.cat === "Salaries");
+        const vendorMap = new Map<string, number>();
+        salaryExpenses.forEach(e => vendorMap.set(e.vendor, (vendorMap.get(e.vendor) || 0) + e.amount));
+
+        // Map vendor names to team member names
+        const nameMap: Record<string, string> = {
+          "Usef Shazly": "Usef El Shazly",
+          "Moaz Sawy": "Moaz El Sawy",
+          "Mohamed Hagry": "Mohamed Hagry",
+        };
+
+        const rows = team.map(member => {
+          const matchKey = Object.entries(nameMap).find(([, full]) => full === member.name)?.[0] || member.name;
+          const totalPaid = vendorMap.get(matchKey) || 0;
+          const months = salaryExpenses.filter(e => e.vendor === matchKey).length || 0;
+          const monthlySalary = months > 0 ? totalPaid / months : 0;
+          return { member, monthlySalary, totalPaid, months };
+        });
+
+        const grandTotal = rows.reduce((s, r) => s + r.totalPaid, 0);
+
+        return (
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="text-xs font-semibold text-foreground mb-0.5">Compensation Summary</div>
+            <div className="text-[10px] text-muted-foreground/50 mb-3">Salaries & equity across the team · Derived from financial records</div>
+            <div className="overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border">
+                    <TableHead className="text-[10px] h-8 px-3">Name</TableHead>
+                    <TableHead className="text-[10px] h-8 px-3">Role</TableHead>
+                    <TableHead className="text-[10px] h-8 px-3">Dept</TableHead>
+                    <TableHead className="text-[10px] h-8 px-3 text-right">Monthly Salary</TableHead>
+                    <TableHead className="text-[10px] h-8 px-3 text-right">Total Paid</TableHead>
+                    <TableHead className="text-[10px] h-8 px-3 text-right">Months</TableHead>
+                    <TableHead className="text-[10px] h-8 px-3">Equity</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((r, i) => (
+                    <TableRow key={i} className="border-border">
+                      <TableCell className="text-[11px] px-3 py-2 font-medium text-foreground">{r.member.name}</TableCell>
+                      <TableCell className="text-[10px] px-3 py-2 text-muted-foreground">{r.member.role}</TableCell>
+                      <TableCell className="text-[10px] px-3 py-2 text-muted-foreground">{r.member.dept}</TableCell>
+                      <TableCell className="text-[11px] px-3 py-2 text-right font-mono text-foreground">
+                        {r.monthlySalary > 0 ? `${fmtCurrency(r.monthlySalary)} EGP` : "—"}
+                      </TableCell>
+                      <TableCell className="text-[11px] px-3 py-2 text-right font-mono text-foreground">
+                        {r.totalPaid > 0 ? `${fmtCurrency(r.totalPaid)} EGP` : "—"}
+                      </TableCell>
+                      <TableCell className="text-[11px] px-3 py-2 text-right font-mono text-muted-foreground">
+                        {r.months > 0 ? r.months : "—"}
+                      </TableCell>
+                      <TableCell className="text-[10px] px-3 py-2">
+                        {r.member.equity !== "—" ? (
+                          <span className="px-2 py-0.5 rounded text-[9px]" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>
+                            {r.member.equity}
+                          </span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="border-border bg-muted/30">
+                    <TableCell colSpan={4} className="text-[11px] px-3 py-2 font-semibold text-foreground">Total Compensation Paid</TableCell>
+                    <TableCell className="text-[11px] px-3 py-2 text-right font-mono font-semibold text-foreground">{fmtCurrency(grandTotal)} EGP</TableCell>
+                    <TableCell colSpan={2} />
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Advisory Section */}
       <div className="bg-card border border-border rounded-xl p-4">
         <div className="text-xs font-semibold text-foreground mb-0.5">Advisory & Board Support</div>
