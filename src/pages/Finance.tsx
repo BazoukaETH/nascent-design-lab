@@ -1,7 +1,11 @@
 import { useState, useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, CartesianGrid } from "recharts";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Pencil, Check, X, Plus, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { SALARY_DATA_SEED, type SalaryEntry } from "@/data/finance";
 // ─── FINANCIAL DATA ───────────────────────────────────────────────────────────
 const DIN = [
   { date: "2025-09-01", client: "SMG Automotive", venture: "Wasla Solutions", service: "Framer Website", amount: 300000, status: "Paid" },
@@ -87,10 +91,18 @@ const allVentures = ["All Ventures", ...Array.from(new Set([...DIN.map(r => r.ve
 const Finance = () => {
   const [tab, setTab] = useState("overview");
   const [ventureFilter, setVentureFilter] = useState("All Ventures");
+  const [salaries, setSalaries] = useState<SalaryEntry[]>(SALARY_DATA_SEED);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const [addSalaryModal, setAddSalaryModal] = useState(false);
+  const [salaryForm, setSalaryForm] = useState({ name: "", role: "", dept: "Engineering", monthlySalary: "", equity: "—" });
+  const [pendingDelete, setPendingDelete] = useState<{ idx: number; name: string } | null>(null);
+
   const tabs = [
     { id: "overview", l: "Overview" },
     { id: "revenue", l: "Revenue" },
     { id: "expenses", l: "Expenses" },
+    { id: "salaries", l: "Salaries" },
     { id: "loans", l: "Loans" },
   ];
 
@@ -355,6 +367,157 @@ const Finance = () => {
                 </table>
               </div>
             </div>
+          </div>
+        );
+      {tab === "salaries" && (() => {
+        const totalMonthly = salaries.reduce((s, r) => s + r.monthlySalary, 0);
+        const totalAnnual = totalMonthly * 12;
+        const paid = salaries.filter(s => s.monthlySalary > 0).length;
+
+        function startEdit(idx: number) { setEditingIdx(idx); setEditValue(String(salaries[idx].monthlySalary)); }
+        function saveEdit() {
+          if (editingIdx === null) return;
+          const v = parseInt(editValue) || 0;
+          setSalaries(salaries.map((s, i) => i === editingIdx ? { ...s, monthlySalary: v } : s));
+          setEditingIdx(null);
+        }
+        function addSalary() {
+          if (!salaryForm.name.trim()) return;
+          const initials = salaryForm.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+          const colors = ["hsl(220,95%,47%)", "hsl(168,100%,42%)", "hsl(160,80%,40%)", "hsl(250,60%,60%)", "hsl(36,90%,53%)", "hsl(330,80%,60%)"];
+          setSalaries([...salaries, {
+            name: salaryForm.name, role: salaryForm.role, dept: salaryForm.dept,
+            monthlySalary: parseInt(salaryForm.monthlySalary) || 0,
+            equity: salaryForm.equity, initials, color: colors[salaries.length % colors.length],
+          }]);
+          setSalaryForm({ name: "", role: "", dept: "Engineering", monthlySalary: "", equity: "—" });
+          setAddSalaryModal(false);
+        }
+        function confirmRemove() {
+          if (!pendingDelete) return;
+          setSalaries(salaries.filter((_, i) => i !== pendingDelete.idx));
+          setPendingDelete(null);
+        }
+
+        return (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-2.5">
+              <KPI label="Monthly Payroll" value={fmtE(totalMonthly)} sub={`${paid} salaried members`} color="hsl(220,95%,47%)" prefix="EGP " />
+              <KPI label="Annual Payroll" value={fmtE(totalAnnual)} sub="Projected" color="hsl(168,100%,42%)" prefix="EGP " />
+              <KPI label="Team Size" value={String(salaries.length)} sub={`${salaries.filter(s => s.equity !== "—").length} with equity`} color="hsl(250,60%,60%)" />
+            </div>
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <div className="text-xs font-semibold text-foreground">Salary Register</div>
+                  <div className="text-[10px] text-muted-foreground/50">Click the pencil icon to edit salaries inline</div>
+                </div>
+                <Button size="sm" className="h-7 text-xs gap-1.5" onClick={() => setAddSalaryModal(true)}>
+                  <Plus className="w-3 h-3" /> Add Member
+                </Button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-[11px]">
+                  <thead>
+                    <tr className="border-b border-border">
+                      {["", "Name", "Role", "Department", "Monthly Salary", "Annual", "Equity", ""].map(h => (
+                        <th key={h} className="text-left p-2 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {salaries.map((s, i) => (
+                      <tr key={i} className="border-b border-border/30">
+                        <td className="p-2">
+                          <div className="w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold" style={{ background: `${s.color}22`, border: `1.5px solid ${s.color}55`, color: s.color }}>
+                            {s.initials}
+                          </div>
+                        </td>
+                        <td className="p-2 font-semibold text-foreground">{s.name}</td>
+                        <td className="p-2 text-muted-foreground">{s.role}</td>
+                        <td className="p-2 text-muted-foreground">{s.dept}</td>
+                        <td className="p-2">
+                          {editingIdx === i ? (
+                            <div className="flex items-center gap-1">
+                              <Input value={editValue} onChange={e => setEditValue(e.target.value)} className="h-7 w-24 text-xs" type="number" autoFocus onKeyDown={e => e.key === "Enter" && saveEdit()} />
+                              <button onClick={saveEdit} className="p-1 rounded hover:bg-muted"><Check className="w-3 h-3" style={{ color: "hsl(160,80%,40%)" }} /></button>
+                              <button onClick={() => setEditingIdx(null)} className="p-1 rounded hover:bg-muted"><X className="w-3 h-3 text-muted-foreground" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-foreground">{s.monthlySalary > 0 ? fmtF(s.monthlySalary) : "—"}</span>
+                              <button onClick={() => startEdit(i)} className="p-1 rounded hover:bg-muted opacity-50 hover:opacity-100"><Pencil className="w-3 h-3 text-muted-foreground" /></button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-2 text-muted-foreground">{s.monthlySalary > 0 ? fmtF(s.monthlySalary * 12) : "—"}</td>
+                        <td className="p-2">
+                          {s.equity !== "—" ? (
+                            <span className="text-[9px] font-semibold px-2 py-0.5 rounded" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>{s.equity}</span>
+                          ) : <span className="text-muted-foreground">—</span>}
+                        </td>
+                        <td className="p-2">
+                          <button onClick={() => setPendingDelete({ idx: i, name: s.name })} className="p-1 rounded hover:bg-muted opacity-40 hover:opacity-100">
+                            <Trash2 className="w-3 h-3 text-muted-foreground" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border">
+                      <td colSpan={4} className="p-2 text-right font-bold text-muted-foreground text-[11px]">TOTAL</td>
+                      <td className="p-2 font-bold text-[13px]" style={{ color: "hsl(220,95%,47%)" }}>{fmtF(totalMonthly)}</td>
+                      <td className="p-2 font-bold text-[13px]" style={{ color: "hsl(168,100%,42%)" }}>{fmtF(totalAnnual)}</td>
+                      <td colSpan={2}></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            {/* Add Salary Modal */}
+            <Dialog open={addSalaryModal} onOpenChange={setAddSalaryModal}>
+              <DialogContent className="sm:max-w-[420px] bg-card border-border">
+                <DialogHeader><DialogTitle>Add Team Member Salary</DialogTitle></DialogHeader>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground font-medium">Full Name *</label>
+                    <Input value={salaryForm.name} onChange={e => setSalaryForm({ ...salaryForm, name: e.target.value })} placeholder="e.g. John Doe" className="h-8 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground font-medium">Role</label>
+                    <Input value={salaryForm.role} onChange={e => setSalaryForm({ ...salaryForm, role: e.target.value })} placeholder="e.g. Developer" className="h-8 text-xs" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground font-medium">Monthly Salary</label>
+                    <Input value={salaryForm.monthlySalary} onChange={e => setSalaryForm({ ...salaryForm, monthlySalary: e.target.value })} placeholder="e.g. 30000" className="h-8 text-xs" type="number" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-muted-foreground font-medium">Equity</label>
+                    <Input value={salaryForm.equity} onChange={e => setSalaryForm({ ...salaryForm, equity: e.target.value })} placeholder="e.g. 2% (WV)" className="h-8 text-xs" />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => setAddSalaryModal(false)} className="text-xs h-8">Cancel</Button>
+                  <Button onClick={addSalary} disabled={!salaryForm.name.trim()} className="text-xs h-8">Add</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation */}
+            <Dialog open={!!pendingDelete} onOpenChange={() => setPendingDelete(null)}>
+              <DialogContent className="sm:max-w-[380px] bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle>Remove Team Member</DialogTitle>
+                  <DialogDescription>Are you sure you want to remove <strong>{pendingDelete?.name}</strong> from the salary register?</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setPendingDelete(null)} className="text-xs h-8">Cancel</Button>
+                  <Button variant="destructive" onClick={confirmRemove} className="text-xs h-8">Remove</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         );
       })()}
