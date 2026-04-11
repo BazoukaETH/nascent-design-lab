@@ -2,7 +2,7 @@ import { useState } from "react";
 import { VENTURES_DATA, PORTFOLIO_DATA, VENTURE_PIPELINE_SEED, STAGE_OPTS, STAGE_COLORS, DEAL_COLORS } from "@/data/ventures";
 import type { PortfolioItem } from "@/data/ventures";
 import type { VentureData, VenturePipelineDeal } from "@/data/ventures";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -46,6 +46,16 @@ const Ventures = () => {
   const [milestonesStr, setMilestonesStr] = useState("");
   const [servicesStr, setServicesStr] = useState("");
 
+  // Delete confirmation
+  const [pendingDelete, setPendingDelete] = useState<{ type: "venture" | "deal" | "portfolio"; index: number; name: string } | null>(null);
+  function confirmDelete() {
+    if (!pendingDelete) return;
+    if (pendingDelete.type === "venture") setVentures(ventures.filter((_, i) => i !== pendingDelete.index));
+    else if (pendingDelete.type === "deal") setVpDeals(vpDeals.filter((_, i) => i !== pendingDelete.index));
+    else if (pendingDelete.type === "portfolio") setPortfolio(portfolio.filter((_, i) => i !== pendingDelete.index));
+    setPendingDelete(null);
+  }
+
   // Pipeline modal
   const [addModal, setAddModal] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
@@ -77,7 +87,7 @@ const Ventures = () => {
     else { setVentures([...ventures, entry]); }
     setVentureModal(false);
   }
-  function removeVenture(i: number) { setVentures(ventures.filter((_, idx) => idx !== i)); }
+  function removeVenture(i: number) { setPendingDelete({ type: "venture", index: i, name: ventures[i].name }); }
 
   function openAdd() { setForm(emptyForm); setEditIdx(null); setAddModal(true); }
   function openEdit(i: number) { setForm({ ...vpDeals[i] }); setEditIdx(i); setAddModal(true); }
@@ -88,7 +98,7 @@ const Ventures = () => {
     else { setVpDeals([...vpDeals, entry]); }
     setAddModal(false);
   }
-  function removeDeal(i: number) { setVpDeals(vpDeals.filter((_, idx) => idx !== i)); }
+  function removeDeal(i: number) { setPendingDelete({ type: "deal", index: i, name: vpDeals[i].name }); }
 
   function openAddPortfolio() { setPortfolioForm(emptyPortfolio); setEditPortfolioIdx(null); setPortfolioModal(true); }
   function openEditPortfolio(i: number) { setPortfolioForm({ ...portfolio[i] }); setEditPortfolioIdx(i); setPortfolioModal(true); }
@@ -97,7 +107,7 @@ const Ventures = () => {
     else { setPortfolio([...portfolio, portfolioForm]); }
     setPortfolioModal(false);
   }
-  function removePortfolio(i: number) { setPortfolio(portfolio.filter((_, idx) => idx !== i)); }
+  function removePortfolio(i: number) { setPendingDelete({ type: "portfolio", index: i, name: portfolio[i].name }); }
 
   const liveCount = ventures.filter(v => ["Live", "Building"].includes(v.stage)).length;
   const tabs: { id: TabKey; label: string }[] = [
@@ -631,6 +641,22 @@ const Ventures = () => {
             <Button variant="outline" onClick={() => setPortfolioModal(false)} className="text-xs h-8">Cancel</Button>
             <Button onClick={savePortfolio} disabled={!portfolioForm.name.trim()} className="text-xs h-8">{editPortfolioIdx !== null ? "Save Changes" : "Add Holding"}</Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={!!pendingDelete} onOpenChange={(open) => { if (!open) setPendingDelete(null); }}>
+        <DialogContent className="sm:max-w-[400px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Confirm Removal</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-xs">
+              Are you sure you want to remove <span className="font-semibold text-foreground">{pendingDelete?.name}</span>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPendingDelete(null)} className="text-xs h-8">Cancel</Button>
+            <Button variant="destructive" onClick={confirmDelete} className="text-xs h-8">Remove</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
