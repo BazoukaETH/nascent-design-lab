@@ -23,6 +23,16 @@ const Ventures = () => {
   const [selected, setSelected] = useState<string | null>(null);
   const [ventures, setVentures] = useState<VentureData[]>(VENTURES_DATA);
   const [vpDeals, setVpDeals] = useState<VenturePipelineDeal[]>(VENTURE_PIPELINE_SEED);
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(PORTFOLIO_DATA);
+
+  // Portfolio modal
+  const [portfolioModal, setPortfolioModal] = useState(false);
+  const [editPortfolioIdx, setEditPortfolioIdx] = useState<number | null>(null);
+  const emptyPortfolio: PortfolioItem = {
+    name: "", type: "Stake", stake: "", invested: "", status: "Active", color: "hsl(220, 95%, 47%)",
+    desc: "", category: "",
+  };
+  const [portfolioForm, setPortfolioForm] = useState<PortfolioItem>(emptyPortfolio);
 
   // Venture modal
   const [ventureModal, setVentureModal] = useState(false);
