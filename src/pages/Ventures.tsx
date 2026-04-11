@@ -46,6 +46,16 @@ const Ventures = () => {
   const [milestonesStr, setMilestonesStr] = useState("");
   const [servicesStr, setServicesStr] = useState("");
 
+  // Delete confirmation
+  const [pendingDelete, setPendingDelete] = useState<{ type: "venture" | "deal" | "portfolio"; index: number; name: string } | null>(null);
+  function confirmDelete() {
+    if (!pendingDelete) return;
+    if (pendingDelete.type === "venture") setVentures(ventures.filter((_, i) => i !== pendingDelete.index));
+    else if (pendingDelete.type === "deal") setVpDeals(vpDeals.filter((_, i) => i !== pendingDelete.index));
+    else if (pendingDelete.type === "portfolio") setPortfolio(portfolio.filter((_, i) => i !== pendingDelete.index));
+    setPendingDelete(null);
+  }
+
   // Pipeline modal
   const [addModal, setAddModal] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
