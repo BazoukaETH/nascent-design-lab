@@ -369,6 +369,8 @@ const Finance = () => {
             </div>
           </div>
         );
+      })()}
+
       {tab === "salaries" && (() => {
         const totalMonthly = salaries.reduce((s, r) => s + r.monthlySalary, 0);
         const totalAnnual = totalMonthly * 12;
