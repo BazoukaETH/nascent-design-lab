@@ -90,6 +90,15 @@ const Ventures = () => {
   }
   function removeDeal(i: number) { setVpDeals(vpDeals.filter((_, idx) => idx !== i)); }
 
+  function openAddPortfolio() { setPortfolioForm(emptyPortfolio); setEditPortfolioIdx(null); setPortfolioModal(true); }
+  function openEditPortfolio(i: number) { setPortfolioForm({ ...portfolio[i] }); setEditPortfolioIdx(i); setPortfolioModal(true); }
+  function savePortfolio() {
+    if (editPortfolioIdx !== null) { const u = [...portfolio]; u[editPortfolioIdx] = portfolioForm; setPortfolio(u); }
+    else { setPortfolio([...portfolio, portfolioForm]); }
+    setPortfolioModal(false);
+  }
+  function removePortfolio(i: number) { setPortfolio(portfolio.filter((_, idx) => idx !== i)); }
+
   const liveCount = ventures.filter(v => ["Live", "Building"].includes(v.stage)).length;
   const tabs: { id: TabKey; label: string }[] = [
     { id: "overview", label: "Overview" },
