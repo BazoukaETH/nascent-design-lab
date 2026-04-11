@@ -570,6 +570,69 @@ const Ventures = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Add/Edit Portfolio Holding */}
+      <Dialog open={portfolioModal} onOpenChange={setPortfolioModal}>
+        <DialogContent className="sm:max-w-[480px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{editPortfolioIdx !== null ? "Edit Holding" : "Add New Holding"}</DialogTitle>
+            <p className="text-[11px] text-muted-foreground">Track a strategic position or investment holding</p>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Company Name *</label>
+              <Input value={portfolioForm.name} onChange={(e) => setPortfolioForm({ ...portfolioForm, name: e.target.value })} placeholder="e.g. Paperwork Studio" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Category</label>
+              <Input value={portfolioForm.category} onChange={(e) => setPortfolioForm({ ...portfolioForm, category: e.target.value })} placeholder="e.g. Creative & Branding" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Type</label>
+              <Select value={portfolioForm.type} onValueChange={(v) => setPortfolioForm({ ...portfolioForm, type: v })}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["Stake", "Investment", "Strategic", "Acquisition"].map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Status</label>
+              <Select value={portfolioForm.status} onValueChange={(v) => setPortfolioForm({ ...portfolioForm, status: v })}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["Active", "Confirmed", "Negotiating", "Exited"].map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Stake</label>
+              <Input value={portfolioForm.stake} onChange={(e) => setPortfolioForm({ ...portfolioForm, stake: e.target.value })} placeholder="e.g. 25%" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Amount Invested</label>
+              <Input value={portfolioForm.invested} onChange={(e) => setPortfolioForm({ ...portfolioForm, invested: e.target.value })} placeholder="e.g. 150K EGP" className="h-8 text-xs" />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Accent Color</label>
+              <div className="flex gap-1.5 mt-1">
+                {DEAL_COLORS.map((c) => (
+                  <div key={c} onClick={() => setPortfolioForm({ ...portfolioForm, color: c })} className="w-5 h-5 rounded cursor-pointer transition-all"
+                    style={{ background: c, border: portfolioForm.color === c ? "2px solid white" : "2px solid transparent" }} />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground font-medium">Description</label>
+            <Textarea value={portfolioForm.desc} onChange={(e) => setPortfolioForm({ ...portfolioForm, desc: e.target.value })} placeholder="Brief description of this holding..." className="text-xs min-h-[60px]" />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setPortfolioModal(false)} className="text-xs h-8">Cancel</Button>
+            <Button onClick={savePortfolio} disabled={!portfolioForm.name.trim()} className="text-xs h-8">{editPortfolioIdx !== null ? "Save Changes" : "Add Holding"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
