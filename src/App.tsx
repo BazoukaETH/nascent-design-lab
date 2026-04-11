@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SalaryProvider } from "@/contexts/SalaryContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Ventures from "./pages/Ventures";
@@ -18,22 +19,24 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/ventures" element={<Ventures />} />
-            <Route path="/clients" element={<Clients />} />
-            <Route path="/people" element={<People />} />
-            <Route path="/finance" element={<Finance />} />
-            <Route path="/ai-agents" element={<AIAgents />} />
-            <Route path="/settings" element={<SettingsPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <SalaryProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/ventures" element={<Ventures />} />
+              <Route path="/clients" element={<Clients />} />
+              <Route path="/people" element={<People />} />
+              <Route path="/finance" element={<Finance />} />
+              <Route path="/ai-agents" element={<AIAgents />} />
+              <Route path="/settings" element={<SettingsPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </SalaryProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
