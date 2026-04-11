@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useSalaries } from "@/contexts/SalaryContext";
 
 interface TeamMember {
   name: string;
@@ -36,6 +37,7 @@ const People = () => {
   const [selected, setSelected] = useState<number | null>(null);
   const [addModal, setAddModal] = useState(false);
   const [form, setForm] = useState({ name: "", role: "", dept: "Engineering", skills: "", bio: "", focus: "", equity: "—" });
+  const { addSalaryEntry } = useSalaries();
 
   function addMember() {
     if (!form.name.trim()) return;
@@ -46,6 +48,11 @@ const People = () => {
       skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
       bio: form.bio, focus: form.focus,
     }]);
+    // Auto-add to salary register as pending (0 salary)
+    addSalaryEntry({
+      name: form.name, role: form.role, dept: form.dept,
+      monthlySalary: 0, equity: "—", venture: "Pending",
+    });
     setForm({ name: "", role: "", dept: "Engineering", skills: "", bio: "", focus: "", equity: "—" });
     setAddModal(false);
   }

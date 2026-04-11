@@ -65,19 +65,20 @@ export interface SalaryEntry {
   dept: string;
   monthlySalary: number;
   equity: string;
+  venture: string;
   initials: string;
   color: string;
 }
 
 export const SALARY_DATA_SEED: SalaryEntry[] = [
-  { name: "Bassel El Aroussy", role: "Principal", dept: "Leadership", monthlySalary: 0, equity: "55% (WV)", initials: "BA", color: "hsl(220,95%,47%)" },
-  { name: "Usef El Shazly", role: "Digital Lead", dept: "Product & Design", monthlySalary: 60000, equity: "10% (WV) / 35% (Edu)", initials: "UE", color: "hsl(168,100%,42%)" },
-  { name: "Hussein Shahbender", role: "Marketing Lead", dept: "Growth", monthlySalary: 0, equity: "15% (WV)", initials: "HS", color: "hsl(250,60%,60%)" },
-  { name: "Moaz El Sawy", role: "Development Lead", dept: "Engineering", monthlySalary: 30000, equity: "2% (WV) / 2.5% (Sol+Edu)", initials: "ME", color: "hsl(160,80%,40%)" },
-  { name: "Ali El Amir", role: "Creative Lead", dept: "Design", monthlySalary: 0, equity: "2% (WV)", initials: "AE", color: "hsl(36,90%,53%)" },
-  { name: "Mohab Metwali", role: "Engineering & AI Lead", dept: "Engineering", monthlySalary: 0, equity: "1% (direct)", initials: "MM", color: "hsl(330,80%,60%)" },
-  { name: "Mohamed Hagry", role: "Product Designer", dept: "Design", monthlySalary: 20000, equity: "—", initials: "MH", color: "hsl(174,72%,46%)" },
-  { name: "Saif Nosair", role: "Visual & Motion Designer", dept: "Design", monthlySalary: 0, equity: "—", initials: "SN", color: "hsl(24,94%,53%)" },
+  { name: "Bassel El Aroussy", role: "Principal", dept: "Leadership", monthlySalary: 0, equity: "55% (WV)", venture: "Wasla Ventures", initials: "BA", color: "hsl(220,95%,47%)" },
+  { name: "Usef El Shazly", role: "Digital Lead", dept: "Product & Design", monthlySalary: 60000, equity: "10% (WV) / 35% (Edu)", venture: "Wasla Solutions", initials: "UE", color: "hsl(168,100%,42%)" },
+  { name: "Hussein Shahbender", role: "Marketing Lead", dept: "Growth", monthlySalary: 0, equity: "15% (WV)", venture: "Wasla Ventures", initials: "HS", color: "hsl(250,60%,60%)" },
+  { name: "Moaz El Sawy", role: "Development Lead", dept: "Engineering", monthlySalary: 30000, equity: "2% (WV) / 2.5% (Sol+Edu)", venture: "Wasla Solutions", initials: "ME", color: "hsl(160,80%,40%)" },
+  { name: "Ali El Amir", role: "Creative Lead", dept: "Design", monthlySalary: 0, equity: "2% (WV)", venture: "Wasla Ventures", initials: "AE", color: "hsl(36,90%,53%)" },
+  { name: "Mohab Metwali", role: "Engineering & AI Lead", dept: "Engineering", monthlySalary: 0, equity: "1% (direct)", venture: "Wasla Labs", initials: "MM", color: "hsl(330,80%,60%)" },
+  { name: "Mohamed Hagry", role: "Product Designer", dept: "Design", monthlySalary: 20000, equity: "—", venture: "Wasla Solutions", initials: "MH", color: "hsl(174,72%,46%)" },
+  { name: "Saif Nosair", role: "Visual & Motion Designer", dept: "Design", monthlySalary: 0, equity: "—", venture: "Wasla Solutions", initials: "SN", color: "hsl(24,94%,53%)" },
 ];
 
 export const CLIENT_PIPELINE = [

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Pencil, Check, X, Plus, Trash2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { SALARY_DATA_SEED, type SalaryEntry } from "@/data/finance";
+import { useSalaries } from "@/contexts/SalaryContext";
 // ─── FINANCIAL DATA ───────────────────────────────────────────────────────────
 const DIN = [
   { date: "2025-09-01", client: "SMG Automotive", venture: "Wasla Solutions", service: "Framer Website", amount: 300000, status: "Paid" },
@@ -91,11 +92,11 @@ const allVentures = ["All Ventures", ...Array.from(new Set([...DIN.map(r => r.ve
 const Finance = () => {
   const [tab, setTab] = useState("overview");
   const [ventureFilter, setVentureFilter] = useState("All Ventures");
-  const [salaries, setSalaries] = useState<SalaryEntry[]>(SALARY_DATA_SEED);
+  const { salaries, setSalaries } = useSalaries();
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editValue, setEditValue] = useState("");
   const [addSalaryModal, setAddSalaryModal] = useState(false);
-  const [salaryForm, setSalaryForm] = useState({ name: "", role: "", dept: "Engineering", monthlySalary: "", equity: "—" });
+  const [salaryForm, setSalaryForm] = useState({ name: "", role: "", dept: "Engineering", monthlySalary: "", equity: "—", venture: "Wasla Solutions" });
   const [pendingDelete, setPendingDelete] = useState<{ idx: number; name: string } | null>(null);
 
   const tabs = [
@@ -390,9 +391,9 @@ const Finance = () => {
           setSalaries([...salaries, {
             name: salaryForm.name, role: salaryForm.role, dept: salaryForm.dept,
             monthlySalary: parseInt(salaryForm.monthlySalary) || 0,
-            equity: salaryForm.equity, initials, color: colors[salaries.length % colors.length],
+            equity: salaryForm.equity, venture: salaryForm.venture, initials, color: colors[salaries.length % colors.length],
           }]);
-          setSalaryForm({ name: "", role: "", dept: "Engineering", monthlySalary: "", equity: "—" });
+          setSalaryForm({ name: "", role: "", dept: "Engineering", monthlySalary: "", equity: "—", venture: "Wasla Solutions" });
           setAddSalaryModal(false);
         }
         function confirmRemove() {
@@ -422,8 +423,8 @@ const Finance = () => {
                 <table className="w-full text-[11px]">
                   <thead>
                     <tr className="border-b border-border">
-                      {["", "Name", "Role", "Department", "Monthly Salary", "Annual", "Equity", ""].map(h => (
-                        <th key={h} className="text-left p-2 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
+                      {["", "Name", "Role", "Venture", "Monthly Salary", "Annual", "Equity", ""].map((h, hi) => (
+                        <th key={hi} className="text-left p-2 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -437,7 +438,9 @@ const Finance = () => {
                         </td>
                         <td className="p-2 font-semibold text-foreground">{s.name}</td>
                         <td className="p-2 text-muted-foreground">{s.role}</td>
-                        <td className="p-2 text-muted-foreground">{s.dept}</td>
+                        <td className="p-2">
+                          <span className="text-[9px] font-semibold px-2 py-0.5 rounded" style={{ background: "hsl(168,100%,42%,0.12)", color: "hsl(168,100%,42%)" }}>{s.venture}</span>
+                        </td>
                         <td className="p-2">
                           {editingIdx === i ? (
                             <div className="flex items-center gap-1">
@@ -498,6 +501,10 @@ const Finance = () => {
                   <div className="space-y-1">
                     <label className="text-[10px] text-muted-foreground font-medium">Equity</label>
                     <Input value={salaryForm.equity} onChange={e => setSalaryForm({ ...salaryForm, equity: e.target.value })} placeholder="e.g. 2% (WV)" className="h-8 text-xs" />
+                  </div>
+                  <div className="space-y-1 col-span-2">
+                    <label className="text-[10px] text-muted-foreground font-medium">Venture / Subsidiary</label>
+                    <Input value={salaryForm.venture} onChange={e => setSalaryForm({ ...salaryForm, venture: e.target.value })} placeholder="e.g. Wasla Solutions" className="h-8 text-xs" />
                   </div>
                 </div>
                 <div className="flex gap-2 justify-end">
