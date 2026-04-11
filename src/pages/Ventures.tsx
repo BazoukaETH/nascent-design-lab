@@ -6,37 +6,24 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Rocket, Briefcase, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Rocket, Briefcase, Search, TrendingUp, ArrowRight } from "lucide-react";
 
 const StageBadge = ({ stage, color }: { stage: string; color: string }) => (
   <span className="text-[9px] font-bold px-2 py-0.5 rounded-full tracking-wide uppercase" style={{ background: `${color}22`, color }}>{stage}</span>
 );
 
-const SectionHeader = ({ icon: Icon, title, sub, action }: { icon: any; title: string; sub: string; action?: React.ReactNode }) => (
-  <div className="flex items-center justify-between mb-4">
-    <div className="flex items-center gap-3">
-      <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "hsl(220,95%,47%,0.12)", border: "1px solid hsl(220,95%,47%,0.2)" }}>
-        <Icon className="w-4 h-4" style={{ color: "hsl(220,95%,47%)" }} />
-      </div>
-      <div>
-        <h2 className="text-sm font-bold text-foreground">{title}</h2>
-        <p className="text-[10px] text-muted-foreground">{sub}</p>
-      </div>
-    </div>
-    {action}
-  </div>
-);
-
 const VENTURE_STAGES = ["Live", "Building", "Early Stage", "Discovery", "Concept", "Long-term Vision"];
 const VENTURE_CATEGORIES = ["Digital Services", "EdTech", "Travel & Marketplace", "Community", "R&D", "Fintech"];
 
+type TabKey = "overview" | "active" | "portfolio" | "pipeline";
+
 const Ventures = () => {
+  const [tab, setTab] = useState<TabKey>("overview");
   const [selected, setSelected] = useState<string | null>(null);
   const [ventures, setVentures] = useState<VentureData[]>(VENTURES_DATA);
-  const [portfolio, setPortfolio] = useState(PORTFOLIO_DATA);
   const [vpDeals, setVpDeals] = useState<VenturePipelineDeal[]>(VENTURE_PIPELINE_SEED);
 
-  // Venture modals
+  // Venture modal
   const [ventureModal, setVentureModal] = useState(false);
   const [editVentureIdx, setEditVentureIdx] = useState<number | null>(null);
   const emptyVenture: VentureData = {
@@ -48,7 +35,7 @@ const Ventures = () => {
   const [milestonesStr, setMilestonesStr] = useState("");
   const [servicesStr, setServicesStr] = useState("");
 
-  // Pipeline modals
+  // Pipeline modal
   const [addModal, setAddModal] = useState(false);
   const [editIdx, setEditIdx] = useState<number | null>(null);
   const emptyForm: VenturePipelineDeal = {
@@ -63,26 +50,20 @@ const Ventures = () => {
     "Discovery": "hsl(220, 15%, 38%)", "Concept": "hsl(220, 15%, 38%)", "Long-term Vision": "hsl(220, 15%, 38%)",
   };
 
-  function openAddVenture() {
-    setVentureForm(emptyVenture); setEditVentureIdx(null); setMilestonesStr(""); setServicesStr(""); setVentureModal(true);
-  }
+  function openAddVenture() { setVentureForm(emptyVenture); setEditVentureIdx(null); setMilestonesStr(""); setServicesStr(""); setVentureModal(true); }
   function openEditVenture(i: number) {
     const v = ventures[i];
     setVentureForm(v); setEditVentureIdx(i); setMilestonesStr(v.milestones.join("\n")); setServicesStr(v.services.join(", ")); setVentureModal(true);
   }
   function saveVenture() {
     const entry: VentureData = {
-      ...ventureForm,
-      id: ventureForm.id || ventureForm.name.toLowerCase().replace(/\s+/g, "-"),
+      ...ventureForm, id: ventureForm.id || ventureForm.name.toLowerCase().replace(/\s+/g, "-"),
       stageColor: stageColorMap[ventureForm.stage] || "hsl(220, 15%, 38%)",
       milestones: milestonesStr.split("\n").map(s => s.trim()).filter(Boolean),
       services: servicesStr.split(",").map(s => s.trim()).filter(Boolean),
     };
-    if (editVentureIdx !== null) {
-      const updated = [...ventures]; updated[editVentureIdx] = entry; setVentures(updated);
-    } else {
-      setVentures([...ventures, entry]);
-    }
+    if (editVentureIdx !== null) { const u = [...ventures]; u[editVentureIdx] = entry; setVentures(u); }
+    else { setVentures([...ventures, entry]); }
     setVentureModal(false);
   }
   function removeVenture(i: number) { setVentures(ventures.filter((_, idx) => idx !== i)); }
@@ -92,213 +73,315 @@ const Ventures = () => {
   function saveForm() {
     const today = new Date().toLocaleDateString("en-GB", { month: "short", year: "numeric" });
     const entry = { ...form, updated: today };
-    if (editIdx !== null) {
-      const updated = [...vpDeals]; updated[editIdx] = entry; setVpDeals(updated);
-    } else {
-      setVpDeals([...vpDeals, entry]);
-    }
+    if (editIdx !== null) { const u = [...vpDeals]; u[editIdx] = entry; setVpDeals(u); }
+    else { setVpDeals([...vpDeals, entry]); }
     setAddModal(false);
   }
   function removeDeal(i: number) { setVpDeals(vpDeals.filter((_, idx) => idx !== i)); }
 
+  const liveCount = ventures.filter(v => ["Live", "Building"].includes(v.stage)).length;
+  const tabs: { id: TabKey; label: string }[] = [
+    { id: "overview", label: "Overview" },
+    { id: "active", label: "Active Ventures" },
+    { id: "portfolio", label: "Portfolio & Holdings" },
+    { id: "pipeline", label: "Venture Pipeline" },
+  ];
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <div>
         <h1 className="text-[22px] font-bold text-foreground tracking-tight">Ventures & Portfolio</h1>
-        <p className="text-xs text-muted-foreground mt-1">All active arms, strategic holdings, and investment pipeline under Wasla Ventures</p>
+        <p className="text-xs text-muted-foreground mt-1">All subsidiaries, strategic holdings, and investment pipeline under Wasla Ventures</p>
       </div>
 
-      {/* ─── SECTION 1: Active Ventures ─── */}
-      <div>
-        <SectionHeader
-          icon={Rocket}
-          title="Active Ventures"
-          sub={`${ventures.length} ventures across the Wasla ecosystem`}
-          action={
+      {/* Tab toggle */}
+      <div className="flex gap-0 border-b border-border">
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-4 py-2 text-[11px] font-medium transition-colors border-b-2 ${tab === t.id ? "text-secondary border-secondary" : "text-muted-foreground border-transparent hover:text-foreground"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ═══════ OVERVIEW ═══════ */}
+      {tab === "overview" && (
+        <div className="space-y-5">
+          {/* Summary KPIs */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+            {[
+              { label: "Total Ventures", value: ventures.length, color: "hsl(220,95%,47%)" },
+              { label: "Live / Building", value: liveCount, color: "hsl(160,80%,40%)" },
+              { label: "Portfolio Holdings", value: PORTFOLIO_DATA.length, color: "hsl(168,100%,42%)" },
+              { label: "Pipeline Deals", value: vpDeals.length, color: "hsl(36,90%,53%)" },
+            ].map(k => (
+              <div key={k.label} className="bg-card rounded-xl p-4 border border-border relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-[3px] h-full" style={{ background: k.color }} />
+                <div className="text-[9px] text-muted-foreground/50 font-bold uppercase tracking-wide mb-1">{k.label}</div>
+                <div className="text-xl font-bold text-foreground tracking-tight">{k.value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Quick glance: Active Ventures */}
+          <div className="bg-card border border-border rounded-xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Rocket className="w-4 h-4" style={{ color: "hsl(220,95%,47%)" }} />
+                <span className="text-xs font-semibold text-foreground">Active Ventures</span>
+              </div>
+              <button onClick={() => setTab("active")} className="text-[10px] font-semibold flex items-center gap-1 transition-colors" style={{ color: "hsl(220,95%,47%)" }}>
+                View All <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+            <div className="space-y-1.5">
+              {ventures.map((v) => (
+                <div key={v.id} className="flex items-center gap-2.5 py-1.5" style={{ borderBottom: '1px solid hsl(220,25%,16%)' }}>
+                  <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: v.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-semibold text-foreground">{v.name}</div>
+                    <div className="text-[9px] text-muted-foreground">{v.category} · {v.metric}</div>
+                  </div>
+                  <StageBadge stage={v.stage} color={v.stageColor} />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-3">
+            {/* Quick glance: Portfolio */}
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Briefcase className="w-4 h-4" style={{ color: "hsl(168,100%,42%)" }} />
+                  <span className="text-xs font-semibold text-foreground">Portfolio & Holdings</span>
+                </div>
+                <button onClick={() => setTab("portfolio")} className="text-[10px] font-semibold flex items-center gap-1 transition-colors" style={{ color: "hsl(220,95%,47%)" }}>
+                  View All <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+              {PORTFOLIO_DATA.map((p) => (
+                <div key={p.name} className="flex items-center gap-2.5 py-1.5" style={{ borderBottom: '1px solid hsl(220,25%,16%)' }}>
+                  <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: p.color }} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-semibold text-foreground">{p.name}</div>
+                    <div className="text-[9px] text-muted-foreground">{p.category} · {p.stake}</div>
+                  </div>
+                  <StageBadge stage={p.status} color={p.status === "Active" || p.status === "Confirmed" ? "hsl(160,80%,40%)" : "hsl(36,90%,53%)"} />
+                </div>
+              ))}
+            </div>
+
+            {/* Quick glance: Pipeline */}
+            <div className="bg-card border border-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Search className="w-4 h-4" style={{ color: "hsl(36,90%,53%)" }} />
+                  <span className="text-xs font-semibold text-foreground">Venture Pipeline</span>
+                </div>
+                <button onClick={() => setTab("pipeline")} className="text-[10px] font-semibold flex items-center gap-1 transition-colors" style={{ color: "hsl(220,95%,47%)" }}>
+                  View All <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+              {vpDeals.map((d, i) => {
+                const sc = STAGE_COLORS[d.stage] || "hsl(220,15%,38%)";
+                return (
+                  <div key={i} className="flex items-center gap-2.5 py-1.5" style={{ borderBottom: '1px solid hsl(220,25%,16%)' }}>
+                    <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: d.color }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] font-semibold text-foreground">{d.name}</div>
+                      <div className="text-[9px] text-muted-foreground">{d.sector} · {d.size}</div>
+                    </div>
+                    <StageBadge stage={d.stage} color={sc} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ ACTIVE VENTURES ═══════ */}
+      {tab === "active" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] text-muted-foreground">{ventures.length} ventures across the Wasla ecosystem</p>
             <Button size="sm" className="h-7 text-[10px] gap-1.5" onClick={openAddVenture}>
               <Plus className="w-3 h-3" /> Add Venture
             </Button>
-          }
-        />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {ventures.map((v, vi) => (
-            <div
-              key={v.id}
-              className="bg-card rounded-xl p-4 cursor-pointer transition-all duration-200 group"
-              style={{
-                border: `1px solid ${selected === v.id ? v.color : 'hsl(220, 25%, 16%)'}`,
-                boxShadow: selected === v.id ? `0 0 0 1px ${v.color}44` : 'none',
-              }}
-            >
-              <div className="flex items-start justify-between mb-2.5" onClick={() => setSelected(selected === v.id ? null : v.id)}>
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-sm" style={{ background: v.color }} />
-                  <span className="text-[10px] text-muted-foreground">{v.category}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <StageBadge stage={v.stage} color={v.stageColor} />
-                  {selected === v.id ? <ChevronUp className="w-3 h-3 text-muted-foreground" /> : <ChevronDown className="w-3 h-3 text-muted-foreground" />}
-                </div>
-              </div>
-              <div onClick={() => setSelected(selected === v.id ? null : v.id)}>
-                <div className="text-[13px] font-bold text-foreground mb-0.5">{v.name}</div>
-                <div className="text-[10px] text-muted-foreground mb-2.5 line-clamp-2 leading-relaxed">{v.desc.slice(0, 90)}...</div>
-                <div className="flex gap-1.5 text-[9px] text-muted-foreground/60">
-                  <span>Owner: <span className="text-muted-foreground">{v.owner.split(" ")[0]}</span></span>
-                  <span>·</span>
-                  <span>{v.metric}</span>
-                </div>
-              </div>
-
-              {selected === v.id && (
-                <div className="mt-3.5 pt-3.5 border-t border-border space-y-3 animate-in fade-in duration-200">
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">{v.desc}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-muted rounded-lg p-2.5">
-                      <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">Model</div>
-                      <div className="text-[10px] text-foreground font-medium mt-0.5">{v.model}</div>
-                    </div>
-                    <div className="bg-muted rounded-lg p-2.5">
-                      <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">North Star</div>
-                      <div className="text-[10px] text-foreground font-medium mt-0.5">{v.northStar}</div>
-                    </div>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {ventures.map((v, vi) => (
+              <div key={v.id} className="bg-card rounded-xl p-4 cursor-pointer transition-all duration-200"
+                style={{ border: `1px solid ${selected === v.id ? v.color : 'hsl(220, 25%, 16%)'}`, boxShadow: selected === v.id ? `0 0 0 1px ${v.color}44` : 'none' }}>
+                <div className="flex items-start justify-between mb-2.5" onClick={() => setSelected(selected === v.id ? null : v.id)}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-sm" style={{ background: v.color }} />
+                    <span className="text-[10px] text-muted-foreground">{v.category}</span>
                   </div>
-                  <div>
-                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wide font-semibold mb-1.5">Milestones</div>
-                    {v.milestones.map((m, mi) => (
-                      <div key={mi} className="flex gap-2 mb-1">
-                        <div className="w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ background: v.color }} />
-                        <span className="text-[10px] text-muted-foreground">{m}</span>
+                  <div className="flex items-center gap-1.5">
+                    <StageBadge stage={v.stage} color={v.stageColor} />
+                    {selected === v.id ? <ChevronUp className="w-3 h-3 text-muted-foreground" /> : <ChevronDown className="w-3 h-3 text-muted-foreground" />}
+                  </div>
+                </div>
+                <div onClick={() => setSelected(selected === v.id ? null : v.id)}>
+                  <div className="text-[13px] font-bold text-foreground mb-0.5">{v.name}</div>
+                  <div className="text-[10px] text-muted-foreground mb-2.5 line-clamp-2 leading-relaxed">{v.desc.slice(0, 90)}...</div>
+                  <div className="flex gap-1.5 text-[9px] text-muted-foreground/60">
+                    <span>Owner: <span className="text-muted-foreground">{v.owner.split(" ")[0]}</span></span>
+                    <span>·</span>
+                    <span>{v.metric}</span>
+                  </div>
+                </div>
+                {selected === v.id && (
+                  <div className="mt-3.5 pt-3.5 border-t border-border space-y-3 animate-in fade-in duration-200">
+                    <p className="text-[11px] text-muted-foreground leading-relaxed">{v.desc}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="bg-muted rounded-lg p-2.5">
+                        <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">Model</div>
+                        <div className="text-[10px] text-foreground font-medium mt-0.5">{v.model}</div>
                       </div>
-                    ))}
+                      <div className="bg-muted rounded-lg p-2.5">
+                        <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">North Star</div>
+                        <div className="text-[10px] text-foreground font-medium mt-0.5">{v.northStar}</div>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wide font-semibold mb-1.5">Milestones</div>
+                      {v.milestones.map((m, mi) => (
+                        <div key={mi} className="flex gap-2 mb-1">
+                          <div className="w-1 h-1 rounded-full mt-1.5 shrink-0" style={{ background: v.color }} />
+                          <span className="text-[10px] text-muted-foreground">{m}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {v.risks && <div className="text-[10px]" style={{ color: "hsl(36,90%,53%)" }}>⚠ {v.risks}</div>}
+                    {v.next && <div className="text-[10px]" style={{ color: "hsl(160,80%,40%)" }}>→ Next: {v.next}</div>}
+                    <div className="flex gap-1 flex-wrap">
+                      {v.services.map((s, si) => (
+                        <span key={si} className="text-[9px] bg-muted px-2 py-0.5 rounded text-muted-foreground">{s}</span>
+                      ))}
+                    </div>
+                    <div className="flex gap-1.5 pt-1">
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5" onClick={(e) => { e.stopPropagation(); openEditVenture(vi); }}>
+                        <Pencil className="w-3 h-3 mr-1" /> Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); removeVenture(vi); }}>
+                        <Trash2 className="w-3 h-3 mr-1" /> Remove
+                      </Button>
+                    </div>
                   </div>
-                  {v.risks && <div className="text-[10px]" style={{ color: "hsl(36,90%,53%)" }}>⚠ {v.risks}</div>}
-                  {v.next && <div className="text-[10px]" style={{ color: "hsl(160,80%,40%)" }}>→ Next: {v.next}</div>}
-                  <div className="flex gap-1 flex-wrap">
-                    {v.services.map((s, si) => (
-                      <span key={si} className="text-[9px] bg-muted px-2 py-0.5 rounded text-muted-foreground">{s}</span>
-                    ))}
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ PORTFOLIO & HOLDINGS ═══════ */}
+      {tab === "portfolio" && (
+        <div className="space-y-4">
+          <p className="text-[11px] text-muted-foreground">{PORTFOLIO_DATA.length} strategic positions across the ecosystem</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {PORTFOLIO_DATA.map((p) => (
+              <div key={p.name} className="bg-card border border-border rounded-xl p-4">
+                <div className="flex items-start justify-between mb-2.5">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-sm" style={{ background: p.color }} />
+                    <span className="text-[10px] text-muted-foreground">{p.category}</span>
                   </div>
-                  <div className="flex gap-1.5 pt-1">
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5" onClick={(e) => { e.stopPropagation(); openEditVenture(vi); }}>
+                  <StageBadge stage={p.status} color={p.status === "Active" || p.status === "Confirmed" ? "hsl(160, 80%, 40%)" : "hsl(36, 90%, 53%)"} />
+                </div>
+                <div className="text-[13px] font-bold text-foreground mb-0.5">{p.name}</div>
+                <div className="text-[10px] text-muted-foreground mb-3 leading-relaxed">{p.desc}</div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { label: "Type", value: p.type },
+                    { label: "Stake", value: p.stake, style: { color: p.color } },
+                    { label: "Invested", value: p.invested },
+                  ].map((b) => (
+                    <div key={b.label} className="bg-muted rounded-md p-2">
+                      <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">{b.label}</div>
+                      <div className="text-[10px] font-bold text-foreground mt-0.5" style={b.style}>{b.value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══════ VENTURE PIPELINE ═══════ */}
+      {tab === "pipeline" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1.5 flex-wrap">
+              {STAGE_OPTS.map((s) => (
+                <span key={s} className="text-[9px] px-2 py-0.5 rounded font-semibold" style={{ background: `${STAGE_COLORS[s]}22`, color: STAGE_COLORS[s] }}>{s}</span>
+              ))}
+            </div>
+            <Button size="sm" className="h-7 text-[10px] gap-1.5" onClick={openAdd}>
+              <Plus className="w-3 h-3" /> Add Deal
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {vpDeals.map((deal, i) => {
+              const stageClr = STAGE_COLORS[deal.stage] || "hsl(220, 15%, 38%)";
+              const highlighted = deal.stage === "Negotiating";
+              return (
+                <div key={i} className="bg-card rounded-xl p-4" style={{ border: `1px solid ${highlighted ? stageClr + '55' : 'hsl(220, 25%, 16%)'}` }}>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: deal.color }} />
+                        <span className="text-[13px] font-bold text-foreground">{deal.name}</span>
+                        <span className="text-[9px] px-2 py-0.5 rounded font-semibold" style={{ background: `${stageClr}22`, color: stageClr }}>{deal.stage}</span>
+                        <span className="text-[9px] text-muted-foreground/50">{deal.type}</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground leading-relaxed mb-1">{deal.notes}</div>
+                      <div className="text-[10px] text-muted-foreground/50 italic">Thesis: {deal.thesis}</div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 shrink-0 w-[280px]">
+                      {[
+                        { label: "SECTOR", value: deal.sector, color: "text-foreground" },
+                        { label: "SIZE", value: deal.size, style: { color: deal.color } },
+                        { label: "TARGET STAKE", value: deal.stake, color: "text-foreground" },
+                      ].map((b) => (
+                        <div key={b.label} className="bg-muted rounded-md p-2">
+                          <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide mb-0.5">{b.label}</div>
+                          <div className={`text-[10px] font-semibold ${b.color || ''}`} style={b.style}>{b.value}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-3 mt-2.5 pt-2.5 border-t border-border items-center text-[9px]">
+                    <span className="text-muted-foreground/50">Owner: <span className="text-muted-foreground">{deal.owner.split(" ")[0]}</span></span>
+                    <span className="text-muted-foreground/50">Source: <span className="text-muted-foreground">{deal.source}</span></span>
+                    <span className="text-muted-foreground/50">Valuation: <span className="text-muted-foreground">{deal.valuation}</span></span>
+                    <span className="text-muted-foreground/50 ml-auto">Updated: {deal.updated}</span>
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5" onClick={() => openEdit(i)}>
                       <Pencil className="w-3 h-3 mr-1" /> Edit
                     </Button>
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); removeVenture(vi); }}>
+                    <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => removeDeal(i)}>
                       <Trash2 className="w-3 h-3 mr-1" /> Remove
                     </Button>
                   </div>
                 </div>
-              )}
-            </div>
-          ))}
+              );
+            })}
+            <button onClick={openAdd} className="w-full bg-transparent border border-dashed border-border rounded-xl p-3.5 flex items-center gap-2.5 hover:border-primary/50 transition-colors">
+              <Plus className="w-4 h-4 text-muted-foreground/50" />
+              <span className="text-[11px] text-muted-foreground/50">Add new deal or opportunity</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ─── Strategic Portfolio & Holdings ─── */}
-      <div>
-        <SectionHeader icon={Briefcase} title="Strategic Portfolio & Holdings" sub={`${portfolio.length} strategic positions`} />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {portfolio.map((p) => (
-            <div key={p.name} className="bg-card border border-border rounded-xl p-4">
-              <div className="flex items-start justify-between mb-2.5">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-sm" style={{ background: p.color }} />
-                  <span className="text-[10px] text-muted-foreground">{p.category}</span>
-                </div>
-                <StageBadge stage={p.status} color={p.status === "Active" || p.status === "Confirmed" ? "hsl(160, 80%, 40%)" : "hsl(36, 90%, 53%)"} />
-              </div>
-              <div className="text-[13px] font-bold text-foreground mb-0.5">{p.name}</div>
-              <div className="text-[10px] text-muted-foreground mb-3 leading-relaxed">{p.desc}</div>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-muted rounded-md p-2">
-                  <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">Type</div>
-                  <div className="text-[10px] font-semibold text-foreground mt-0.5">{p.type}</div>
-                </div>
-                <div className="bg-muted rounded-md p-2">
-                  <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">Stake</div>
-                  <div className="text-[10px] font-bold mt-0.5" style={{ color: p.color }}>{p.stake}</div>
-                </div>
-                <div className="bg-muted rounded-md p-2">
-                  <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">Invested</div>
-                  <div className="text-[10px] font-bold text-foreground mt-0.5">{p.invested}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* ═══════ DIALOGS ═══════ */}
 
-      {/* ─── SECTION 2: Venture Pipeline ─── */}
-      <div>
-        <SectionHeader
-          icon={Search}
-          title="Venture Pipeline"
-          sub="Investment opportunities, acquisitions, and strategic deals being tracked"
-          action={
-            <Button size="sm" className="h-7 text-[10px] gap-1.5" onClick={openAdd}>
-              <Plus className="w-3 h-3" /> Add Deal
-            </Button>
-          }
-        />
-        <div className="flex gap-1.5 mb-3 flex-wrap">
-          {STAGE_OPTS.map((s) => (
-            <span key={s} className="text-[9px] px-2 py-0.5 rounded font-semibold" style={{ background: `${STAGE_COLORS[s]}22`, color: STAGE_COLORS[s] }}>{s}</span>
-          ))}
-        </div>
-
-        <div className="space-y-2">
-          {vpDeals.map((deal, i) => {
-            const stageClr = STAGE_COLORS[deal.stage] || "hsl(220, 15%, 38%)";
-            const highlighted = deal.stage === "Negotiating";
-            return (
-              <div key={i} className="bg-card rounded-xl p-4" style={{ border: `1px solid ${highlighted ? stageClr + '55' : 'hsl(220, 25%, 16%)'}` }}>
-                <div className="flex items-start gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: deal.color }} />
-                      <span className="text-[13px] font-bold text-foreground">{deal.name}</span>
-                      <span className="text-[9px] px-2 py-0.5 rounded font-semibold" style={{ background: `${stageClr}22`, color: stageClr }}>{deal.stage}</span>
-                      <span className="text-[9px] text-muted-foreground/50">{deal.type}</span>
-                    </div>
-                    <div className="text-[10px] text-muted-foreground leading-relaxed mb-1">{deal.notes}</div>
-                    <div className="text-[10px] text-muted-foreground/50 italic">Thesis: {deal.thesis}</div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 shrink-0 w-[280px]">
-                    {[
-                      { label: "SECTOR", value: deal.sector, color: "text-foreground" },
-                      { label: "SIZE", value: deal.size, style: { color: deal.color } },
-                      { label: "TARGET STAKE", value: deal.stake, color: "text-foreground" },
-                    ].map((b) => (
-                      <div key={b.label} className="bg-muted rounded-md p-2">
-                        <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide mb-0.5">{b.label}</div>
-                        <div className={`text-[10px] font-semibold ${b.color || ''}`} style={b.style}>{b.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex gap-3 mt-2.5 pt-2.5 border-t border-border items-center text-[9px]">
-                  <span className="text-muted-foreground/50">Owner: <span className="text-muted-foreground">{deal.owner.split(" ")[0]}</span></span>
-                  <span className="text-muted-foreground/50">Source: <span className="text-muted-foreground">{deal.source}</span></span>
-                  <span className="text-muted-foreground/50">Valuation: <span className="text-muted-foreground">{deal.valuation}</span></span>
-                  <span className="text-muted-foreground/50 ml-auto">Updated: {deal.updated}</span>
-                  <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5" onClick={() => openEdit(i)}>
-                    <Pencil className="w-3 h-3 mr-1" /> Edit
-                  </Button>
-                  <Button variant="outline" size="sm" className="h-6 text-[9px] px-2.5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => removeDeal(i)}>
-                    <Trash2 className="w-3 h-3 mr-1" /> Remove
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-          <button onClick={openAdd} className="w-full bg-transparent border border-dashed border-border rounded-xl p-3.5 flex items-center gap-2.5 hover:border-primary/50 transition-colors">
-            <Plus className="w-4 h-4 text-muted-foreground/50" />
-            <span className="text-[11px] text-muted-foreground/50">Add new deal or opportunity</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Add/Edit Venture Dialog */}
+      {/* Add/Edit Venture */}
       <Dialog open={ventureModal} onOpenChange={setVentureModal}>
         <DialogContent className="sm:max-w-[560px] bg-card border-border">
           <DialogHeader>
@@ -370,7 +453,7 @@ const Ventures = () => {
           </div>
           <div className="space-y-1">
             <label className="text-[10px] text-muted-foreground font-medium">Milestones (one per line)</label>
-            <Textarea value={milestonesStr} onChange={(e) => setMilestonesStr(e.target.value)} placeholder="Sep 2025: Launched&#10;Oct 2025: First client" className="text-xs min-h-[50px]" />
+            <Textarea value={milestonesStr} onChange={(e) => setMilestonesStr(e.target.value)} placeholder={"Sep 2025: Launched\nOct 2025: First client"} className="text-xs min-h-[50px]" />
           </div>
           <div className="space-y-1">
             <label className="text-[10px] text-muted-foreground font-medium">Services (comma-separated)</label>
@@ -383,7 +466,7 @@ const Ventures = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Add/Edit Deal Dialog */}
+      {/* Add/Edit Deal */}
       <Dialog open={addModal} onOpenChange={setAddModal}>
         <DialogContent className="sm:max-w-[560px] bg-card border-border">
           <DialogHeader>
