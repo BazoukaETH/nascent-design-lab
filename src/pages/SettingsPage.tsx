@@ -18,28 +18,42 @@ const users = [
   { name: "Saif Nosair", role: "Member", lastActive: "Mar 19" },
 ];
 
+const SectionHeader = ({ icon: Icon, title }: { icon: any; title: string }) => (
+  <div className="flex items-center gap-2 mb-3">
+    <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: "hsl(220,95%,47%,0.12)", border: "1px solid hsl(220,95%,47%,0.2)" }}>
+      <Icon className="w-3.5 h-3.5" style={{ color: "hsl(220,95%,47%)" }} />
+    </div>
+    <h2 className="text-sm font-bold text-foreground">{title}</h2>
+  </div>
+);
+
+const roleColors: Record<string, { bg: string; color: string }> = {
+  Admin: { bg: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" },
+  Member: { bg: "hsl(220,15%,38%,0.15)", color: "hsl(215,20%,55%)" },
+};
+
 const SettingsPage = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-1">Integrations, users, and permissions</p>
+        <h1 className="text-[22px] font-bold text-foreground tracking-tight">Settings</h1>
+        <p className="text-xs text-muted-foreground mt-1">Integrations, users, and permissions</p>
       </div>
 
       {/* Integrations */}
       <div>
-        <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5">
-          <Link className="w-4 h-4" /> Integrations
-        </h2>
-        <div className="grid sm:grid-cols-2 gap-3">
+        <SectionHeader icon={Link} title="Integrations" />
+        <div className="grid sm:grid-cols-2 gap-2.5">
           {integrations.map((int) => (
-            <div key={int.name} className="bg-card border border-border rounded-lg p-4">
+            <div key={int.name} className="bg-card border border-border rounded-xl p-4">
               <div className="flex items-center justify-between mb-1">
-                <h3 className="font-medium text-foreground text-sm">{int.name}</h3>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{int.status}</span>
+                <h3 className="text-[12px] font-bold text-foreground">{int.name}</h3>
+                <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "hsl(220,15%,38%,0.15)", color: "hsl(215,20%,55%)" }}>
+                  {int.status}
+                </span>
               </div>
-              <p className="text-xs text-muted-foreground">{int.description}</p>
-              <button className="mt-3 text-xs text-primary hover:underline">Connect →</button>
+              <p className="text-[10px] text-muted-foreground leading-relaxed">{int.description}</p>
+              <button className="mt-3 text-[10px] font-semibold transition-colors" style={{ color: "hsl(220,95%,47%)" }}>Connect →</button>
             </div>
           ))}
         </div>
@@ -47,34 +61,32 @@ const SettingsPage = () => {
 
       {/* User Management */}
       <div>
-        <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5">
-          <Users className="w-4 h-4" /> Users ({users.length})
-        </h2>
-        <div className="bg-card border border-border rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <SectionHeader icon={Users} title={`Users (${users.length})`} />
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <table className="w-full text-[11px]">
             <thead>
-              <tr className="border-b border-border bg-muted/50">
-                <th className="text-left p-3 font-medium text-muted-foreground text-xs">Name</th>
-                <th className="text-left p-3 font-medium text-muted-foreground text-xs">Role</th>
-                <th className="text-left p-3 font-medium text-muted-foreground text-xs">Last Active</th>
-                <th className="text-left p-3 font-medium text-muted-foreground text-xs"></th>
+              <tr className="border-b border-border">
+                {["Name", "Role", "Last Active", ""].map(h => (
+                  <th key={h} className="text-left p-3 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.name} className="border-b border-border last:border-0">
-                  <td className="p-3 font-medium text-foreground">{u.name}</td>
-                  <td className="p-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${u.role === "Admin" ? "bg-blue-100 text-blue-800" : "bg-muted text-muted-foreground"}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td className="p-3 text-muted-foreground">{u.lastActive}</td>
-                  <td className="p-3">
-                    <button className="text-xs text-muted-foreground hover:text-foreground">Edit</button>
-                  </td>
-                </tr>
-              ))}
+              {users.map((u) => {
+                const rc = roleColors[u.role] || roleColors.Member;
+                return (
+                  <tr key={u.name} className="border-b border-border/30 last:border-0">
+                    <td className="p-3 font-semibold text-foreground">{u.name}</td>
+                    <td className="p-3">
+                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: rc.bg, color: rc.color }}>{u.role}</span>
+                    </td>
+                    <td className="p-3 text-muted-foreground">{u.lastActive}</td>
+                    <td className="p-3">
+                      <button className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">Edit</button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -82,34 +94,28 @@ const SettingsPage = () => {
 
       {/* Permissions */}
       <div>
-        <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5">
-          <Shield className="w-4 h-4" /> Permissions
-        </h2>
-        <div className="bg-card border border-border rounded-lg p-4 space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <div>
-              <p className="text-foreground">Admin</p>
-              <p className="text-xs text-muted-foreground">Full access to all ventures, finance, AI agents, and settings</p>
+        <SectionHeader icon={Shield} title="Permissions" />
+        <div className="bg-card border border-border rounded-xl p-4 space-y-3">
+          {[
+            { role: "Admin", desc: "Full access to all ventures, finance, AI agents, and settings", count: 2 },
+            { role: "Member", desc: "Access to assigned projects, own tasks, and shared documents", count: 6 },
+          ].map((p, i) => (
+            <div key={p.role} className={`flex items-center justify-between text-[11px] ${i > 0 ? "border-t border-border pt-3" : ""}`}>
+              <div>
+                <p className="font-semibold text-foreground">{p.role}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{p.desc}</p>
+              </div>
+              <span className="text-[10px] text-muted-foreground">{p.count} users</span>
             </div>
-            <span className="text-xs text-muted-foreground">2 users</span>
-          </div>
-          <div className="border-t border-border pt-3 flex items-center justify-between text-sm">
-            <div>
-              <p className="text-foreground">Member</p>
-              <p className="text-xs text-muted-foreground">Access to assigned projects, own tasks, and shared documents</p>
-            </div>
-            <span className="text-xs text-muted-foreground">6 users</span>
-          </div>
+          ))}
         </div>
       </div>
 
       {/* API Keys */}
       <div>
-        <h2 className="text-sm font-medium text-foreground mb-3 flex items-center gap-1.5">
-          <Key className="w-4 h-4" /> API Keys
-        </h2>
-        <div className="bg-card border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">No API keys configured yet. Keys will be needed for ClickUp, Google, and AI agent integrations.</p>
+        <SectionHeader icon={Key} title="API Keys" />
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-[11px] text-muted-foreground">No API keys configured yet. Keys will be needed for ClickUp, Google, and AI agent integrations.</p>
         </div>
       </div>
     </div>

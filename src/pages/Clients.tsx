@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GripVertical, ExternalLink } from "lucide-react";
+import { GripVertical, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 
 interface PipelineEntry {
   id: string;
@@ -24,15 +24,15 @@ const pipelineData: PipelineEntry[] = [
 ];
 
 const stages = ["Lead", "Discovery", "Proposal", "Negotiation", "Won", "Lost"];
+const stageColors: Record<string, string> = {
+  Lead: "hsl(220, 15%, 38%)", Discovery: "hsl(220, 95%, 47%)", Proposal: "hsl(36, 90%, 53%)",
+  Negotiation: "hsl(250, 60%, 60%)", Won: "hsl(160, 80%, 40%)", Lost: "hsl(350, 75%, 50%)",
+};
 
 const clients = [
   {
-    client: "Cairo Food Solutions",
-    project: "Full digital platform",
-    value: "500,000 EGP",
-    status: "Active",
-    phase: "Phase 1 of 3",
-    team: ["Moaz", "Mohamed", "Saif"],
+    client: "Cairo Food Solutions", project: "Full digital platform", value: "500,000 EGP", status: "Active",
+    phase: "Phase 1 of 3", team: ["Moaz", "Mohamed", "Saif"],
     payments: [
       { milestone: "Upfront (30%)", amount: "150,000", status: "Paid" },
       { milestone: "Phase 1 delivery", amount: "175,000", status: "Pending" },
@@ -40,24 +40,16 @@ const clients = [
     ],
   },
   {
-    client: "Baraka Pharm",
-    project: "Shopify redesign + retainer",
-    value: "60,000+ EGP",
-    status: "Active",
-    phase: "Redesign complete, retainer active",
-    team: ["Moaz", "Mohamed"],
+    client: "Baraka Pharm", project: "Shopify redesign + retainer", value: "60,000+ EGP", status: "Active",
+    phase: "Redesign complete, retainer active", team: ["Moaz", "Mohamed"],
     payments: [
       { milestone: "Redesign", amount: "60,000", status: "Paid" },
       { milestone: "Monthly retainer", amount: "15,000/mo", status: "Recurring" },
     ],
   },
   {
-    client: "EJB",
-    project: "App SLA retainer",
-    value: "100,000 EGP (4 months)",
-    status: "Active",
-    phase: "Month 2 of 4",
-    team: ["Moaz"],
+    client: "EJB", project: "App SLA retainer", value: "100,000 EGP (4 months)", status: "Active",
+    phase: "Month 2 of 4", team: ["Moaz"],
     payments: [
       { milestone: "Month 1", amount: "25,000", status: "Paid" },
       { milestone: "Month 2", amount: "25,000", status: "Pending" },
@@ -67,12 +59,9 @@ const clients = [
   },
 ];
 
-const paymentStatusColor: Record<string, string> = {
-  Paid: "text-green-600",
-  Pending: "text-yellow-600",
-  Upcoming: "text-muted-foreground",
-  Recurring: "text-blue-600",
-  Overdue: "text-red-600",
+const paymentColors: Record<string, string> = {
+  Paid: "hsl(160, 80%, 40%)", Pending: "hsl(36, 90%, 53%)", Upcoming: "hsl(220, 15%, 38%)",
+  Recurring: "hsl(220, 95%, 47%)", Overdue: "hsl(350, 75%, 50%)",
 };
 
 const Clients = () => {
@@ -80,25 +69,19 @@ const Clients = () => {
   const [expandedClient, setExpandedClient] = useState<string | null>(null);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Clients</h1>
-          <p className="text-sm text-muted-foreground mt-1">Wasla Solutions pipeline & active projects</p>
+          <h1 className="text-[22px] font-bold text-foreground tracking-tight">Clients</h1>
+          <p className="text-xs text-muted-foreground mt-1">Wasla Solutions pipeline & active projects</p>
         </div>
-        <div className="flex bg-muted rounded-md p-0.5">
-          <button
-            onClick={() => setView("pipeline")}
-            className={`text-sm px-3 py-1.5 rounded transition-colors ${view === "pipeline" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-          >
-            Pipeline
-          </button>
-          <button
-            onClick={() => setView("projects")}
-            className={`text-sm px-3 py-1.5 rounded transition-colors ${view === "projects" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"}`}
-          >
-            Active Projects
-          </button>
+        <div className="flex bg-muted rounded-lg p-0.5">
+          {["pipeline", "projects"].map((v) => (
+            <button key={v} onClick={() => setView(v as any)}
+              className={`text-[11px] px-3 py-1.5 rounded-md font-medium transition-colors ${view === v ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
+              {v === "pipeline" ? "Pipeline" : "Active Projects"}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -106,33 +89,37 @@ const Clients = () => {
         <div className="flex gap-3 overflow-x-auto pb-2">
           {stages.map((stage) => {
             const items = pipelineData.filter((p) => p.stage === stage);
+            const sc = stageColors[stage] || "hsl(220, 15%, 38%)";
             return (
               <div key={stage} className="min-w-[220px] w-[220px] shrink-0">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-foreground">{stage}</h3>
-                  <span className="text-xs bg-muted text-muted-foreground rounded-full px-1.5 py-0.5">{items.length}</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: sc }} />
+                    <h3 className="text-[11px] font-semibold text-foreground">{stage}</h3>
+                  </div>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: `${sc}22`, color: sc }}>{items.length}</span>
                 </div>
                 <div className="space-y-2">
                   {items.map((item) => (
-                    <div key={item.id} className="bg-card border border-border rounded-lg p-3">
+                    <div key={item.id} className="bg-card border border-border rounded-xl p-3">
                       <div className="flex items-start gap-2">
-                        <GripVertical className="w-3.5 h-3.5 text-muted-foreground/40 mt-0.5 shrink-0" />
+                        <GripVertical className="w-3 h-3 text-muted-foreground/30 mt-0.5 shrink-0" />
                         <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{item.company}</p>
-                          <p className="text-xs text-muted-foreground">{item.contact}</p>
+                          <p className="text-[11px] font-semibold text-foreground truncate">{item.company}</p>
+                          <p className="text-[10px] text-muted-foreground">{item.contact}</p>
                           <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs font-medium text-foreground tabular-nums">{item.value} EGP</span>
-                            <span className="text-xs text-muted-foreground tabular-nums">{item.probability}%</span>
+                            <span className="text-[10px] font-bold text-foreground tabular-nums">{item.value} EGP</span>
+                            <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: `${sc}22`, color: sc }}>{item.probability}%</span>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">{item.nextAction}</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Owner: {item.owner}</p>
+                          <p className="text-[9px] text-muted-foreground mt-1">{item.nextAction}</p>
+                          <p className="text-[9px] text-muted-foreground/50 mt-0.5">Owner: {item.owner}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                   {items.length === 0 && (
-                    <div className="bg-muted/30 border border-dashed border-border rounded-lg p-4 text-center">
-                      <p className="text-xs text-muted-foreground">No entries</p>
+                    <div className="border border-dashed border-border rounded-xl p-4 text-center">
+                      <p className="text-[10px] text-muted-foreground/50">No entries</p>
                     </div>
                   )}
                 </div>
@@ -141,49 +128,48 @@ const Clients = () => {
           })}
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {clients.map((c) => (
-            <div key={c.client} className="bg-card border border-border rounded-lg">
+            <div key={c.client} className="bg-card border border-border rounded-xl overflow-hidden">
               <button
                 onClick={() => setExpandedClient(expandedClient === c.client ? null : c.client)}
                 className="w-full p-4 text-left flex items-center justify-between"
               >
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-foreground">{c.client}</h3>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-800">{c.status}</span>
+                    <h3 className="text-[13px] font-bold text-foreground">{c.client}</h3>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "hsl(160,80%,40%,0.12)", color: "hsl(160,80%,40%)" }}>{c.status}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mt-0.5">{c.project} · {c.value}</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{c.project} · {c.value}</p>
                 </div>
-                <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                {expandedClient === c.client ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </button>
-
               {expandedClient === c.client && (
                 <div className="px-4 pb-4 space-y-4 border-t border-border pt-4">
-                  <div className="grid sm:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Current Phase</p>
-                      <p className="text-sm text-foreground">{c.phase}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Team</p>
-                      <p className="text-sm text-foreground">{c.team.join(", ")}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Total Value</p>
-                      <p className="text-sm text-foreground">{c.value}</p>
-                    </div>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    {[
+                      { label: "Current Phase", value: c.phase },
+                      { label: "Team", value: c.team.join(", ") },
+                      { label: "Total Value", value: c.value },
+                    ].map((d) => (
+                      <div key={d.label} className="bg-muted rounded-lg p-2.5">
+                        <div className="text-[8px] text-muted-foreground/50 uppercase tracking-wide">{d.label}</div>
+                        <div className="text-[11px] text-foreground font-medium mt-0.5">{d.value}</div>
+                      </div>
+                    ))}
                   </div>
-
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Payment Milestones</p>
+                    <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wide font-semibold mb-2">Payment Milestones</div>
                     <div className="space-y-1.5">
                       {c.payments.map((p, i) => (
-                        <div key={i} className="flex items-center justify-between text-sm">
+                        <div key={i} className="flex items-center justify-between text-[11px]">
                           <span className="text-foreground">{p.milestone}</span>
                           <div className="flex items-center gap-3">
                             <span className="text-muted-foreground tabular-nums">{p.amount} EGP</span>
-                            <span className={`text-xs ${paymentStatusColor[p.status] || "text-muted-foreground"}`}>{p.status}</span>
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full"
+                              style={{ background: `${paymentColors[p.status] || "hsl(220,15%,38%)"}22`, color: paymentColors[p.status] || "hsl(220,15%,38%)" }}>
+                              {p.status}
+                            </span>
                           </div>
                         </div>
                       ))}
