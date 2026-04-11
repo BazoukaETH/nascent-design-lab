@@ -502,7 +502,10 @@ const Finance = () => {
                     <label className="text-[10px] text-muted-foreground font-medium">Equity</label>
                     <Input value={salaryForm.equity} onChange={e => setSalaryForm({ ...salaryForm, equity: e.target.value })} placeholder="e.g. 2% (WV)" className="h-8 text-xs" />
                   </div>
-                </div>
+                  <div className="space-y-1 col-span-2">
+                    <label className="text-[10px] text-muted-foreground font-medium">Venture / Subsidiary</label>
+                    <Input value={salaryForm.venture} onChange={e => setSalaryForm({ ...salaryForm, venture: e.target.value })} placeholder="e.g. Wasla Solutions" className="h-8 text-xs" />
+                  </div>
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" onClick={() => setAddSalaryModal(false)} className="text-xs h-8">Cancel</Button>
                   <Button onClick={addSalary} disabled={!salaryForm.name.trim()} className="text-xs h-8">Add</Button>
