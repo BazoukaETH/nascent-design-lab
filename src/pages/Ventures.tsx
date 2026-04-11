@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { VENTURES_DATA, PORTFOLIO_DATA, VENTURE_PIPELINE_SEED, STAGE_OPTS, STAGE_COLORS, DEAL_COLORS } from "@/data/ventures";
+import type { PortfolioItem } from "@/data/ventures";
 import type { VentureData, VenturePipelineDeal } from "@/data/ventures";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,16 @@ const Ventures = () => {
   const [selected, setSelected] = useState<string | null>(null);
   const [ventures, setVentures] = useState<VentureData[]>(VENTURES_DATA);
   const [vpDeals, setVpDeals] = useState<VenturePipelineDeal[]>(VENTURE_PIPELINE_SEED);
+  const [portfolio, setPortfolio] = useState<PortfolioItem[]>(PORTFOLIO_DATA);
+
+  // Portfolio modal
+  const [portfolioModal, setPortfolioModal] = useState(false);
+  const [editPortfolioIdx, setEditPortfolioIdx] = useState<number | null>(null);
+  const emptyPortfolio: PortfolioItem = {
+    name: "", type: "Stake", stake: "", invested: "", status: "Active", color: "hsl(220, 95%, 47%)",
+    desc: "", category: "",
+  };
+  const [portfolioForm, setPortfolioForm] = useState<PortfolioItem>(emptyPortfolio);
 
   // Venture modal
   const [ventureModal, setVentureModal] = useState(false);
@@ -79,6 +90,15 @@ const Ventures = () => {
   }
   function removeDeal(i: number) { setVpDeals(vpDeals.filter((_, idx) => idx !== i)); }
 
+  function openAddPortfolio() { setPortfolioForm(emptyPortfolio); setEditPortfolioIdx(null); setPortfolioModal(true); }
+  function openEditPortfolio(i: number) { setPortfolioForm({ ...portfolio[i] }); setEditPortfolioIdx(i); setPortfolioModal(true); }
+  function savePortfolio() {
+    if (editPortfolioIdx !== null) { const u = [...portfolio]; u[editPortfolioIdx] = portfolioForm; setPortfolio(u); }
+    else { setPortfolio([...portfolio, portfolioForm]); }
+    setPortfolioModal(false);
+  }
+  function removePortfolio(i: number) { setPortfolio(portfolio.filter((_, idx) => idx !== i)); }
+
   const liveCount = ventures.filter(v => ["Live", "Building"].includes(v.stage)).length;
   const tabs: { id: TabKey; label: string }[] = [
     { id: "overview", label: "Overview" },
@@ -112,7 +132,7 @@ const Ventures = () => {
             {[
               { label: "Total Ventures", value: ventures.length, color: "hsl(220,95%,47%)" },
               { label: "Live / Building", value: liveCount, color: "hsl(160,80%,40%)" },
-              { label: "Portfolio Holdings", value: PORTFOLIO_DATA.length, color: "hsl(168,100%,42%)" },
+              { label: "Portfolio Holdings", value: portfolio.length, color: "hsl(168,100%,42%)" },
               { label: "Pipeline Deals", value: vpDeals.length, color: "hsl(36,90%,53%)" },
             ].map(k => (
               <div key={k.label} className="bg-card rounded-xl p-4 border border-border relative overflow-hidden">
@@ -160,7 +180,7 @@ const Ventures = () => {
                   View All <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
-              {PORTFOLIO_DATA.map((p) => (
+              {portfolio.map((p) => (
                 <div key={p.name} className="flex items-center gap-2.5 py-1.5" style={{ borderBottom: '1px solid hsl(220,25%,16%)' }}>
                   <div className="w-2 h-2 rounded-sm shrink-0" style={{ background: p.color }} />
                   <div className="flex-1 min-w-0">
@@ -281,10 +301,15 @@ const Ventures = () => {
       {/* ═══════ PORTFOLIO & HOLDINGS ═══════ */}
       {tab === "portfolio" && (
         <div className="space-y-4">
-          <p className="text-[11px] text-muted-foreground">{PORTFOLIO_DATA.length} strategic positions across the ecosystem</p>
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] text-muted-foreground">{portfolio.length} strategic positions across the ecosystem</p>
+            <Button size="sm" className="h-7 text-[10px] gap-1.5" onClick={openAddPortfolio}>
+              <Plus className="w-3 h-3" /> Add Holding
+            </Button>
+          </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {PORTFOLIO_DATA.map((p) => (
-              <div key={p.name} className="bg-card border border-border rounded-xl p-4">
+            {portfolio.map((p, i) => (
+              <div key={p.name + i} className="bg-card border border-border rounded-xl p-4">
                 <div className="flex items-start justify-between mb-2.5">
                   <div className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-sm" style={{ background: p.color }} />
@@ -294,7 +319,7 @@ const Ventures = () => {
                 </div>
                 <div className="text-[13px] font-bold text-foreground mb-0.5">{p.name}</div>
                 <div className="text-[10px] text-muted-foreground mb-3 leading-relaxed">{p.desc}</div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 mb-3">
                   {[
                     { label: "Type", value: p.type },
                     { label: "Stake", value: p.stake, style: { color: p.color } },
@@ -305,6 +330,14 @@ const Ventures = () => {
                       <div className="text-[10px] font-bold text-foreground mt-0.5" style={b.style}>{b.value}</div>
                     </div>
                   ))}
+                </div>
+                <div className="flex gap-1.5 justify-end">
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-muted-foreground hover:text-foreground" onClick={() => openEditPortfolio(i)}>
+                    <Pencil className="w-3 h-3" /> Edit
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1 text-destructive hover:text-destructive" onClick={() => removePortfolio(i)}>
+                    <Trash2 className="w-3 h-3" /> Remove
+                  </Button>
                 </div>
               </div>
             ))}
@@ -534,6 +567,69 @@ const Ventures = () => {
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setAddModal(false)} className="text-xs h-8">Cancel</Button>
             <Button onClick={saveForm} disabled={!form.name.trim()} className="text-xs h-8">{editIdx !== null ? "Save Changes" : "Add Deal"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Portfolio Holding */}
+      <Dialog open={portfolioModal} onOpenChange={setPortfolioModal}>
+        <DialogContent className="sm:max-w-[480px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">{editPortfolioIdx !== null ? "Edit Holding" : "Add New Holding"}</DialogTitle>
+            <p className="text-[11px] text-muted-foreground">Track a strategic position or investment holding</p>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Company Name *</label>
+              <Input value={portfolioForm.name} onChange={(e) => setPortfolioForm({ ...portfolioForm, name: e.target.value })} placeholder="e.g. Paperwork Studio" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Category</label>
+              <Input value={portfolioForm.category} onChange={(e) => setPortfolioForm({ ...portfolioForm, category: e.target.value })} placeholder="e.g. Creative & Branding" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Type</label>
+              <Select value={portfolioForm.type} onValueChange={(v) => setPortfolioForm({ ...portfolioForm, type: v })}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["Stake", "Investment", "Strategic", "Acquisition"].map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Status</label>
+              <Select value={portfolioForm.status} onValueChange={(v) => setPortfolioForm({ ...portfolioForm, status: v })}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {["Active", "Confirmed", "Negotiating", "Exited"].map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Stake</label>
+              <Input value={portfolioForm.stake} onChange={(e) => setPortfolioForm({ ...portfolioForm, stake: e.target.value })} placeholder="e.g. 25%" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Amount Invested</label>
+              <Input value={portfolioForm.invested} onChange={(e) => setPortfolioForm({ ...portfolioForm, invested: e.target.value })} placeholder="e.g. 150K EGP" className="h-8 text-xs" />
+            </div>
+            <div className="col-span-2 space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Accent Color</label>
+              <div className="flex gap-1.5 mt-1">
+                {DEAL_COLORS.map((c) => (
+                  <div key={c} onClick={() => setPortfolioForm({ ...portfolioForm, color: c })} className="w-5 h-5 rounded cursor-pointer transition-all"
+                    style={{ background: c, border: portfolioForm.color === c ? "2px solid white" : "2px solid transparent" }} />
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground font-medium">Description</label>
+            <Textarea value={portfolioForm.desc} onChange={(e) => setPortfolioForm({ ...portfolioForm, desc: e.target.value })} placeholder="Brief description of this holding..." className="text-xs min-h-[60px]" />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => setPortfolioModal(false)} className="text-xs h-8">Cancel</Button>
+            <Button onClick={savePortfolio} disabled={!portfolioForm.name.trim()} className="text-xs h-8">{editPortfolioIdx !== null ? "Save Changes" : "Add Holding"}</Button>
           </div>
         </DialogContent>
       </Dialog>
