@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,12 @@ interface TeamMember {
   focus: string;
 }
 
+interface Advisor {
+  name: string;
+  role: string;
+  note: string;
+}
+
 const TEAM_SEED: TeamMember[] = [
   { name: "Bassel El Aroussy", role: "Principal", dept: "Leadership", initials: "BA", color: "hsl(220,95%,47%)", equity: "55% (WV)", skills: ["Strategy", "Business Dev", "Capital Markets", "Partnerships"], bio: "Managing Principal & founder. Former securities broker managing trading platforms serving thousands. Leads all strategic decisions, partnerships, and business development.", focus: "Investor relations, business development, strategy, operations oversight" },
   { name: "Usef El Shazly", role: "Digital Lead", dept: "Product & Design", initials: "UE", color: "hsl(168,100%,42%)", equity: "10% (WV) / 35% (Edu)", skills: ["UI/UX", "Digital Strategy", "Design Systems", "Product"], bio: "Managing Partner & Head of Design. Digital wizard with deep command of design, development, and modern tools.", focus: "Product design, Wasla Education lead, client UX delivery" },
@@ -29,32 +35,90 @@ const TEAM_SEED: TeamMember[] = [
   { name: "Saif Nosair", role: "Visual & Motion Designer", dept: "Design", initials: "SN", color: "hsl(24,94%,53%)", equity: "—", skills: ["Motion Design", "After Effects", "Brand Identity", "Video"], bio: "Talented visual and motion designer bringing brands to life through compelling graphics.", focus: "Motion graphics, brand videos, social content, visual campaigns" },
 ];
 
+const ADVISORS_SEED: Advisor[] = [
+  { name: "Mr. Yasser Hashem", role: "Legal Advisor", note: "Top tech lawyer in Egypt. 2% equity for 3 years of legal services." },
+  { name: "Board-level Tech Advisors", role: "Technical Board", note: "Two senior developers acting at board level with strong external credibility." },
+  { name: "Strategic Business Board", role: "Business Board", note: "Three high-profile businessmen/investors providing strategic direction and network access." },
+];
+
 const DEPTS = ["Leadership", "Product & Design", "Engineering", "Growth", "Design"];
 const DEPT_COLORS = ["hsl(220,95%,47%)", "hsl(168,100%,42%)", "hsl(160,80%,40%)", "hsl(250,60%,60%)", "hsl(36,90%,53%)", "hsl(330,80%,60%)", "hsl(174,72%,46%)", "hsl(24,94%,53%)"];
 
 const People = () => {
   const [team, setTeam] = useState<TeamMember[]>(TEAM_SEED);
+  const [advisors, setAdvisors] = useState<Advisor[]>(ADVISORS_SEED);
   const [selected, setSelected] = useState<number | null>(null);
   const [addModal, setAddModal] = useState(false);
+  const [editIdx, setEditIdx] = useState<number | null>(null);
   const [form, setForm] = useState({ name: "", role: "", dept: "Engineering", skills: "", bio: "", focus: "", equity: "—" });
+
+  // Advisory state
+  const [addAdvisorModal, setAddAdvisorModal] = useState(false);
+  const [editAdvisorIdx, setEditAdvisorIdx] = useState<number | null>(null);
+  const [advisorForm, setAdvisorForm] = useState({ name: "", role: "", note: "" });
+
   const { addSalaryEntry } = useSalaries();
 
-  function addMember() {
+  function resetForm() {
+    setForm({ name: "", role: "", dept: "Engineering", skills: "", bio: "", focus: "", equity: "—" });
+  }
+
+  function openEditMember(i: number) {
+    const p = team[i];
+    setForm({ name: p.name, role: p.role, dept: p.dept, skills: p.skills.join(", "), bio: p.bio, focus: p.focus, equity: p.equity });
+    setEditIdx(i);
+    setAddModal(true);
+  }
+
+  function saveMember() {
     if (!form.name.trim()) return;
     const initials = form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
-    const color = DEPT_COLORS[team.length % DEPT_COLORS.length];
-    setTeam([...team, {
-      name: form.name, role: form.role, dept: form.dept, initials, color, equity: form.equity,
-      skills: form.skills.split(",").map(s => s.trim()).filter(Boolean),
-      bio: form.bio, focus: form.focus,
-    }]);
-    // Auto-add to salary register as pending (0 salary)
-    addSalaryEntry({
-      name: form.name, role: form.role, dept: form.dept,
-      monthlySalary: 0, equity: "—", venture: "Pending",
-    });
-    setForm({ name: "", role: "", dept: "Engineering", skills: "", bio: "", focus: "", equity: "—" });
+    const skills = form.skills.split(",").map(s => s.trim()).filter(Boolean);
+
+    if (editIdx !== null) {
+      // Edit existing
+      setTeam(prev => prev.map((p, i) => i === editIdx ? { ...p, name: form.name, role: form.role, dept: form.dept, initials, equity: form.equity, skills, bio: form.bio, focus: form.focus } : p));
+    } else {
+      // Add new
+      const color = DEPT_COLORS[team.length % DEPT_COLORS.length];
+      setTeam(prev => [...prev, { name: form.name, role: form.role, dept: form.dept, initials, color, equity: form.equity, skills, bio: form.bio, focus: form.focus }]);
+      addSalaryEntry({ name: form.name, role: form.role, dept: form.dept, monthlySalary: 0, equity: "—", venture: "Pending" });
+    }
+    resetForm();
+    setEditIdx(null);
     setAddModal(false);
+  }
+
+  function removeMember(i: number) {
+    setTeam(prev => prev.filter((_, idx) => idx !== i));
+    if (selected === i) setSelected(null);
+  }
+
+  function resetAdvisorForm() {
+    setAdvisorForm({ name: "", role: "", note: "" });
+  }
+
+  function openEditAdvisor(i: number) {
+    const a = advisors[i];
+    setAdvisorForm({ name: a.name, role: a.role, note: a.note });
+    setEditAdvisorIdx(i);
+    setAddAdvisorModal(true);
+  }
+
+  function saveAdvisor() {
+    if (!advisorForm.name.trim()) return;
+    if (editAdvisorIdx !== null) {
+      setAdvisors(prev => prev.map((a, i) => i === editAdvisorIdx ? { ...advisorForm } : a));
+    } else {
+      setAdvisors(prev => [...prev, { ...advisorForm }]);
+    }
+    resetAdvisorForm();
+    setEditAdvisorIdx(null);
+    setAddAdvisorModal(false);
+  }
+
+  function removeAdvisor(i: number) {
+    setAdvisors(prev => prev.filter((_, idx) => idx !== i));
   }
 
   return (
@@ -64,7 +128,7 @@ const People = () => {
           <h1 className="text-xl font-bold text-foreground tracking-tight">Team</h1>
           <p className="text-xs text-muted-foreground mt-1">{team.length} people across Leadership, Engineering, Design & Growth · Click to expand</p>
         </div>
-        <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setAddModal(true)}>
+        <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => { resetForm(); setEditIdx(null); setAddModal(true); }}>
           <Plus className="w-3.5 h-3.5" /> Add Member
         </Button>
       </div>
@@ -74,9 +138,25 @@ const People = () => {
           <div
             key={i}
             onClick={() => setSelected(selected === i ? null : i)}
-            className="bg-card rounded-xl p-4 cursor-pointer transition-all duration-200"
+            className="bg-card rounded-xl p-4 cursor-pointer transition-all duration-200 group relative"
             style={{ border: `1px solid ${selected === i ? p.color : 'hsl(220,25%,16%)'}` }}
           >
+            {/* Edit / Remove buttons */}
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={e => { e.stopPropagation(); openEditMember(i); }}
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-muted hover:bg-accent transition-colors"
+              >
+                <Pencil className="w-3 h-3 text-muted-foreground" />
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); removeMember(i); }}
+                className="w-6 h-6 rounded-md flex items-center justify-center bg-muted hover:bg-destructive/20 transition-colors"
+              >
+                <X className="w-3 h-3 text-muted-foreground hover:text-destructive" />
+              </button>
+            </div>
+
             <div className="flex items-center gap-3 mb-3">
               <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
@@ -121,15 +201,32 @@ const People = () => {
 
       {/* Advisory Section */}
       <div className="bg-card border border-border rounded-xl p-4">
-        <div className="text-xs font-semibold text-foreground mb-0.5">Advisory & Board Support</div>
-        <div className="text-[10px] text-muted-foreground/50 mb-3">Key relationships backing Wasla Ventures</div>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="text-xs font-semibold text-foreground mb-0.5">Advisory & Board Support</div>
+            <div className="text-[10px] text-muted-foreground/50">Key relationships backing Wasla Ventures</div>
+          </div>
+          <Button size="sm" variant="outline" className="h-7 text-[10px] gap-1" onClick={() => { resetAdvisorForm(); setEditAdvisorIdx(null); setAddAdvisorModal(true); }}>
+            <Plus className="w-3 h-3" /> Add Advisor
+          </Button>
+        </div>
         <div className="grid sm:grid-cols-3 gap-2.5">
-          {[
-            { name: "Mr. Yasser Hashem", role: "Legal Advisor", note: "Top tech lawyer in Egypt. 2% equity for 3 years of legal services." },
-            { name: "Board-level Tech Advisors", role: "Technical Board", note: "Two senior developers acting at board level with strong external credibility." },
-            { name: "Strategic Business Board", role: "Business Board", note: "Three high-profile businessmen/investors providing strategic direction and network access." },
-          ].map((a, i) => (
-            <div key={i} className="bg-muted rounded-lg p-3">
+          {advisors.map((a, i) => (
+            <div key={i} className="bg-muted rounded-lg p-3 group relative">
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => openEditAdvisor(i)}
+                  className="w-5 h-5 rounded flex items-center justify-center bg-card hover:bg-accent transition-colors"
+                >
+                  <Pencil className="w-2.5 h-2.5 text-muted-foreground" />
+                </button>
+                <button
+                  onClick={() => removeAdvisor(i)}
+                  className="w-5 h-5 rounded flex items-center justify-center bg-card hover:bg-destructive/20 transition-colors"
+                >
+                  <X className="w-2.5 h-2.5 text-muted-foreground" />
+                </button>
+              </div>
               <div className="text-[11px] font-semibold text-foreground mb-0.5">{a.name}</div>
               <div className="text-[9px] font-semibold mb-1.5" style={{ color: "hsl(220,95%,47%)" }}>{a.role}</div>
               <div className="text-[10px] text-muted-foreground leading-relaxed">{a.note}</div>
@@ -138,11 +235,11 @@ const People = () => {
         </div>
       </div>
 
-      {/* Add Member Dialog */}
-      <Dialog open={addModal} onOpenChange={setAddModal}>
+      {/* Add/Edit Member Dialog */}
+      <Dialog open={addModal} onOpenChange={v => { if (!v) { setEditIdx(null); resetForm(); } setAddModal(v); }}>
         <DialogContent className="sm:max-w-[480px] bg-card border-border">
           <DialogHeader>
-            <DialogTitle>Add Team Member</DialogTitle>
+            <DialogTitle>{editIdx !== null ? "Edit Team Member" : "Add Team Member"}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
@@ -178,8 +275,35 @@ const People = () => {
             <Input value={form.focus} onChange={e => setForm({ ...form, focus: e.target.value })} placeholder="What they're working on..." className="h-8 text-xs" />
           </div>
           <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setAddModal(false)} className="text-xs h-8">Cancel</Button>
-            <Button onClick={addMember} disabled={!form.name.trim()} className="text-xs h-8">Add Member</Button>
+            <Button variant="outline" onClick={() => { setAddModal(false); setEditIdx(null); resetForm(); }} className="text-xs h-8">Cancel</Button>
+            <Button onClick={saveMember} disabled={!form.name.trim()} className="text-xs h-8">{editIdx !== null ? "Save Changes" : "Add Member"}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add/Edit Advisor Dialog */}
+      <Dialog open={addAdvisorModal} onOpenChange={v => { if (!v) { setEditAdvisorIdx(null); resetAdvisorForm(); } setAddAdvisorModal(v); }}>
+        <DialogContent className="sm:max-w-[420px] bg-card border-border">
+          <DialogHeader>
+            <DialogTitle>{editAdvisorIdx !== null ? "Edit Advisor" : "Add Advisor"}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Name *</label>
+              <Input value={advisorForm.name} onChange={e => setAdvisorForm({ ...advisorForm, name: e.target.value })} placeholder="e.g. Jane Smith" className="h-8 text-xs" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Role</label>
+              <Input value={advisorForm.role} onChange={e => setAdvisorForm({ ...advisorForm, role: e.target.value })} placeholder="e.g. Financial Advisor" className="h-8 text-xs" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] text-muted-foreground font-medium">Note</label>
+            <Input value={advisorForm.note} onChange={e => setAdvisorForm({ ...advisorForm, note: e.target.value })} placeholder="Key details about this advisor..." className="h-8 text-xs" />
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => { setAddAdvisorModal(false); setEditAdvisorIdx(null); resetAdvisorForm(); }} className="text-xs h-8">Cancel</Button>
+            <Button onClick={saveAdvisor} disabled={!advisorForm.name.trim()} className="text-xs h-8">{editAdvisorIdx !== null ? "Save Changes" : "Add Advisor"}</Button>
           </div>
         </DialogContent>
       </Dialog>
