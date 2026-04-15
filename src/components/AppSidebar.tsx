@@ -32,15 +32,33 @@ const AppSidebar = () => {
         collapsed ? "w-[56px]" : "w-[200px]"
       }`}
     >
-      {/* Logo */}
-      <div className={`border-b border-sidebar-border ${collapsed ? "p-2 flex items-center justify-center h-[52px]" : "p-4 pb-3"}`}>
+      {/* Logo + Collapse */}
+      <div className={`border-b border-sidebar-border ${collapsed ? "p-2 flex flex-col items-center justify-center gap-2" : "p-4 pb-3"}`}>
         {collapsed ? (
-          <div className="text-sm font-extrabold tracking-wider text-white">W</div>
-        ) : (
           <>
-            <div className="text-base font-extrabold tracking-[0.08em] text-white">WASLA</div>
-            <div className="text-[9px] font-semibold tracking-[0.12em] text-secondary mt-0.5">VENTURES OS</div>
+            <div className="text-sm font-extrabold tracking-wider text-white">W</div>
+            <button
+              onClick={toggle}
+              className="flex items-center justify-center p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              title="Expand sidebar"
+            >
+              <PanelLeftOpen className="w-4 h-4" />
+            </button>
           </>
+        ) : (
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-base font-extrabold tracking-[0.08em] text-white">WASLA</div>
+              <div className="text-[9px] font-semibold tracking-[0.12em] text-secondary mt-0.5">VENTURES OS</div>
+            </div>
+            <button
+              onClick={toggle}
+              className="flex items-center p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -77,28 +95,12 @@ const AppSidebar = () => {
           <>
             <div className="text-[9px] text-muted-foreground/50 tracking-[0.06em] uppercase">Founder View</div>
             <div className="text-[11px] text-muted-foreground mt-1 font-medium">Bassel El Aroussy</div>
-            <div className="flex items-center gap-1.5 mt-1 mb-2">
+            <div className="flex items-center gap-1.5 mt-1">
               <div className="w-[5px] h-[5px] rounded-full bg-green-500 shadow-[0_0_6px_hsl(160,80%,40%)]" />
               <span className="text-[9px] text-green-500">Live</span>
             </div>
           </>
         )}
-        <button
-          onClick={toggle}
-          className={`flex items-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors ${
-            collapsed ? "justify-center p-2 w-full" : "gap-2 px-2 py-1.5 text-[10px] w-full"
-          }`}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <PanelLeftOpen className="w-4 h-4" />
-          ) : (
-            <>
-              <PanelLeftClose className="w-3.5 h-3.5" />
-              <span>Collapse</span>
-            </>
-          )}
-        </button>
       </div>
     </aside>
   );
