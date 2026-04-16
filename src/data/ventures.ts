@@ -116,25 +116,31 @@ export const PORTFOLIO_DATA: PortfolioItem[] = [
 export const VENTURE_PIPELINE_SEED: VenturePipelineDeal[] = [
   {
     name: "Myfitnessbag", stage: "Negotiating", type: "Investment", sector: "Health & Wellness", color: "hsl(36, 90%, 53%)",
-    size: "150–250K EGP", stake: "15–25%", valuation: "~1M EGP", source: "Direct intro",
-    notes: "3 years operating, financially healthy. Joining consortium acquiring 40–60%. Terms being finalized.",
+    size: "150-250K EGP", stake: "15-25%", valuation: "~1M EGP", source: "Direct intro",
+    notes: "3 years operating, financially healthy. Joining consortium acquiring 40-60%. Terms being finalized.",
     owner: "Bassel El Aroussy", updated: "Feb 2026", thesis: "Complement Wasla ecosystem with health vertical. Strong existing ops.",
   },
   {
-    name: "Unnamed SaaS Startup", stage: "Exploring", type: "Partnership / Co-build", sector: "B2B SaaS", color: "hsl(220, 95%, 47%)",
-    size: "TBD", stake: "TBD", valuation: "TBD", source: "Network referral",
-    notes: "Early conversations. Exploring potential co-build or commercial partnership rather than equity.",
-    owner: "Bassel El Aroussy", updated: "Feb 2026", thesis: "Could extend Wasla Solutions with recurring SaaS revenue layer.",
+    name: "Owl Research", stage: "Exploring", type: "JV / Partnership", sector: "Data & Media", color: "hsl(220, 95%, 47%)",
+    size: "TBD", stake: "TBD", valuation: "TBD", source: "Network",
+    notes: "Data platform with economic data infographics. Exploring potential JV or partnership structure.",
+    owner: "Bassel El Aroussy", updated: "Apr 2026", thesis: "Aligns with Wasla data and content strategy. Potential to co-build data distribution layer.",
   },
   {
-    name: "Egypt F&B Brand", stage: "Sourcing", type: "Acquisition", sector: "Consumer / F&B", color: "hsl(220, 15%, 38%)",
+    name: "Vuze", stage: "Exploring", type: "JV / Partnership", sector: "Creator Economy", color: "hsl(168, 100%, 42%)",
+    size: "TBD", stake: "TBD", valuation: "TBD", source: "Network",
+    notes: "UGC platform connecting campaign managers with creators for paid collaborations and sales. Exploring JV or co-build.",
+    owner: "Bassel El Aroussy", updated: "Apr 2026", thesis: "Creator infrastructure play. Could integrate with Wasla marketing and content services.",
+  },
+  {
+    name: "Egypt F&B Brand", stage: "Watching", type: "Acquisition", sector: "Consumer / F&B", color: "hsl(220, 15%, 38%)",
     size: "TBD", stake: "Majority", valuation: "TBD", source: "Inbound inquiry",
     notes: "Early stage sourcing. No financials reviewed yet. Assessing market position and brand value.",
     owner: "Bassel El Aroussy", updated: "Feb 2026", thesis: "Consumer brand with existing distribution could be scaled via digital.",
   },
 ];
 
-export const STAGE_OPTS = ["Sourcing", "Exploring", "Negotiating", "Due Diligence", "Closed", "Passed"];
+export const STAGE_OPTS = ["Watching", "Exploring", "Negotiating", "Committed", "Passed"];
 
 export const STAGE_COLORS: Record<string, string> = {
   "Sourcing": "hsl(220, 15%, 38%)",

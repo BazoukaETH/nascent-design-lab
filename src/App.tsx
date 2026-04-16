@@ -7,10 +7,14 @@ import { SalaryProvider } from "@/contexts/SalaryContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Ventures from "./pages/Ventures";
-import Clients from "./pages/Clients";
-import People from "./pages/People";
+import Pipeline from "./pages/Pipeline";
 import Finance from "./pages/Finance";
+import Team from "./pages/Team";
+import Network from "./pages/Network";
+import MarketIntel from "./pages/MarketIntel";
+import Initiatives from "./pages/Initiatives";
 import AIAgents from "./pages/AIAgents";
+import Documents from "./pages/Documents";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -27,10 +31,14 @@ const App = () => (
             <Route element={<AppLayout />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/ventures" element={<Ventures />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/people" element={<People />} />
+              <Route path="/pipeline" element={<Pipeline />} />
               <Route path="/finance" element={<Finance />} />
+              <Route path="/team" element={<Team />} />
+              <Route path="/network" element={<Network />} />
+              <Route path="/market-intel" element={<MarketIntel />} />
+              <Route path="/initiatives" element={<Initiatives />} />
               <Route path="/ai-agents" element={<AIAgents />} />
+              <Route path="/documents" element={<Documents />} />
               <Route path="/settings" element={<SettingsPage />} />
             </Route>
             <Route path="*" element={<NotFound />} />
