@@ -106,7 +106,7 @@ const Dashboard = () => {
       liveVentures, totalVentures, portfolioCount, pipelineDeals,
       activePipelineDeals, pipelineValue, burnRate,
       monthlyData, expenseBreakdown, revenueByVenture, attentionItems,
-      monthlyBurn, cashOnHand, mrr, invoiceAging, topClients, burnTrend,
+      monthlyBurn, cashOnHand, runway, mrr, invoiceAging, topClients, burnTrend,
     };
   }, []);
 
