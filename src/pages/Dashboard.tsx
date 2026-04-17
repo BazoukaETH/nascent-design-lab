@@ -104,7 +104,7 @@ const Dashboard = () => {
     return {
       totalRevenue, totalExpenses, net, pendingRevenue, paidRevenue,
       liveVentures, totalVentures, portfolioCount, pipelineDeals,
-      activePipelineDeals, pipelineValue, burnRate, runway,
+      activePipelineDeals, pipelineValue, burnRate,
       monthlyData, expenseBreakdown, revenueByVenture, attentionItems,
       monthlyBurn, cashOnHand, mrr, invoiceAging, topClients, burnTrend,
     };
