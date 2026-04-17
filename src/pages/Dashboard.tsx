@@ -86,11 +86,28 @@ const Dashboard = () => {
       .filter(r => r.status === "Pending")
       .map(r => ({ client: r.client, amount: r.amount, service: r.service, date: r.date }));
 
+    // New founder metrics
+    const monthlyBurn = calculateMonthlyBurn(MONEY_OUT_SEED);
+    const cashOnHand = calculateCashOnHand(CASH_ACCOUNTS_SEED, EXCHANGE_RATES_SEED);
+    const runway = calculateRunway(cashOnHand, monthlyBurn);
+    const mrr = calculateMRR(MONEY_IN_SEED);
+    const invoiceAging = calculateInvoiceAging(MONEY_IN_SEED);
+    const topClients = calculateClientConcentration(MONEY_IN_SEED);
+
+    // Burn trend (this month vs last month)
+    const sortedMonths = Array.from(monthMap.keys()).sort();
+    const lastMonth = sortedMonths[sortedMonths.length - 1];
+    const prevMonth = sortedMonths[sortedMonths.length - 2];
+    const lastBurn = lastMonth ? monthMap.get(lastMonth)!.expenses : 0;
+    const prevBurn = prevMonth ? monthMap.get(prevMonth)!.expenses : 0;
+    const burnTrend = prevBurn > 0 ? ((lastBurn - prevBurn) / prevBurn) * 100 : null;
+
     return {
       totalRevenue, totalExpenses, net, pendingRevenue, paidRevenue,
       liveVentures, totalVentures, portfolioCount, pipelineDeals,
       activePipelineDeals, pipelineValue, burnRate, runway,
       monthlyData, expenseBreakdown, revenueByVenture, attentionItems,
+      monthlyBurn, cashOnHand, mrr, invoiceAging, topClients, burnTrend,
     };
   }, []);
 
