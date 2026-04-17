@@ -1,8 +1,10 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { VENTURES_DATA, PORTFOLIO_DATA, VENTURE_PIPELINE_SEED } from "@/data/ventures";
-import { INCOME_DATA, EXPENSE_DATA, CLIENT_PIPELINE, TEAM_DATA, fmtCurrency } from "@/data/finance";
-import { TrendingUp, TrendingDown, AlertTriangle, Clock, Rocket, Briefcase, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import { INCOME_DATA, EXPENSE_DATA, CLIENT_PIPELINE, TEAM_DATA, fmtCurrency, MONEY_IN_SEED, MONEY_OUT_SEED, CASH_ACCOUNTS_SEED, EXCHANGE_RATES_SEED } from "@/data/finance";
+import { calculateMonthlyBurn, calculateCashOnHand, calculateRunway, calculateMRR, calculateInvoiceAging, calculateClientConcentration } from "@/lib/finance-calculations";
+import { TrendingUp, TrendingDown, AlertTriangle, Clock, Rocket, Briefcase, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, Activity, Wallet, Flame, Repeat, CheckCircle2 } from "lucide-react";
 
 const ChartTip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
