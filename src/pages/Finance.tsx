@@ -416,6 +416,10 @@ const Finance = () => {
       {/* ─── TRANSACTIONS ────────────────────────────────────────────────── */}
       {tab === "transactions" && (
         <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-muted-foreground/60">Source: Wasla Ventures Master · Money In + Money Out · Read-only</p>
+            <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "hsl(220,15%,38%,0.18)", color: "hsl(220,15%,70%)" }}>Read-only · Edit in Google Sheet</span>
+          </div>
           <div className="bg-card border border-border rounded-xl p-3 flex flex-wrap items-center gap-2">
             <Select value={txType} onValueChange={setTxType}>
               <SelectTrigger className="w-[120px] h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -631,6 +635,10 @@ const Finance = () => {
       {/* ─── CASH POSITION ───────────────────────────────────────────────── */}
       {tab === "cash" && (
         <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-muted-foreground/60">Source: Wasla Ventures Master · Cash Position · Read-only</p>
+            <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "hsl(220,15%,38%,0.18)", color: "hsl(220,15%,70%)" }}>Read-only · Edit in Google Sheet</span>
+          </div>
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="text-xs font-semibold text-foreground mb-0.5">Exchange Rates</div>
             <div className="text-[10px] text-muted-foreground/50 mb-3">Used to convert balances to EGP</div>

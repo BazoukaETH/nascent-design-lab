@@ -141,7 +141,12 @@ const Pipeline = () => {
       )}
 
       {tab === "pipeline" && (
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] text-muted-foreground/60">Source: Wasla Ventures Master · Revenue Pipeline · Read-only</p>
+            <span className="inline-flex items-center gap-1 text-[9px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "hsl(220,15%,38%,0.18)", color: "hsl(220,15%,70%)" }}>Read-only · Edit in Google Sheet</span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2">
           {stages.map((stage) => {
             const items = pipelineData.filter((p) => p.stage === stage);
             const sc = stageColors[stage] || "hsl(220, 15%, 38%)";
