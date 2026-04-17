@@ -182,7 +182,7 @@ const Dashboard = () => {
       {/* ═══ ROW 2: Revenue chart + Attention ═══ */}
       <div className="grid lg:grid-cols-[5fr_3fr] gap-3">
         {/* Monthly P&L */}
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="bg-card border border-border rounded-xl p-4 flex flex-col">
           <div className="flex items-center justify-between mb-0.5">
             <div className="text-xs font-semibold text-foreground">Revenue vs Expenses</div>
             <div className="flex items-center gap-3">
@@ -191,7 +191,8 @@ const Dashboard = () => {
             </div>
           </div>
           <div className="text-[10px] text-muted-foreground/50 mb-3">Monthly consolidated — all ventures</div>
-          <ResponsiveContainer width="100%" height={200}>
+          <div className="flex-1 min-h-[200px]">
+          <ResponsiveContainer width="100%" height="100%">
             <BarChart data={metrics.monthlyData} barGap={3} barSize={14}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.03)" vertical={false} />
               <XAxis dataKey="month" tick={{ fontSize: 10, fill: "hsl(220,15%,38%)" }} axisLine={false} tickLine={false} />
