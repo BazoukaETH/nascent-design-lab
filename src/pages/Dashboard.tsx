@@ -120,35 +120,63 @@ const Dashboard = () => {
       <div>
         <h1 className="text-[22px] font-bold text-foreground tracking-tight">{greeting}, Bassel</h1>
         <p className="text-xs text-muted-foreground mt-1">Wasla Ventures · Portfolio Command Center</p>
+        <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+          {metrics.monthlyBurn > 0 && metrics.runway !== null && metrics.cashOnHand > 0
+            ? `Burning EGP ${metrics.monthlyBurn.toLocaleString()}/mo. ${metrics.runway.toFixed(1)} months of runway.`
+            : "Configure Cash Position to see runway."}
+        </p>
       </div>
 
       {/* ═══ TOP KPIs ═══ */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-        {[
-          { icon: DollarSign, label: "Total Revenue", value: `EGP ${fmtCurrency(metrics.totalRevenue)}`, sub: `${INCOME_DATA.length} transactions`, color: "hsl(220,95%,47%)", trend: "+12%" },
-          { icon: TrendingDown, label: "Total Expenses", value: `EGP ${fmtCurrency(metrics.totalExpenses)}`, sub: `${EXPENSE_DATA.length} items`, color: "hsl(350,75%,50%)", trend: null },
-          { icon: TrendingUp, label: "Net Position", value: `EGP ${fmtCurrency(metrics.net)}`, sub: metrics.net >= 0 ? "Cash positive" : "Cash negative", color: metrics.net >= 0 ? "hsl(160,80%,40%)" : "hsl(350,75%,50%)", trend: null },
-          { icon: AlertTriangle, label: "Pending Revenue", value: `EGP ${fmtCurrency(metrics.pendingRevenue)}`, sub: `${metrics.attentionItems.length} invoices`, color: "hsl(36,90%,53%)", trend: null },
-          { icon: Rocket, label: "Active Ventures", value: `${metrics.liveVentures} / ${metrics.totalVentures}`, sub: "Live or building", color: "hsl(168,100%,42%)", trend: null },
-          { icon: Target, label: "Pipeline Value", value: `EGP ${fmtCurrency(metrics.pipelineValue)}`, sub: `${metrics.activePipelineDeals} active deals`, color: "hsl(250,60%,60%)", trend: null },
-        ].map((kpi) => (
-          <div key={kpi.label} className="bg-card rounded-xl p-3.5 border border-border relative overflow-hidden group hover:border-secondary/30 transition-colors">
-            <div className="absolute top-0 left-0 w-[3px] h-full" style={{ background: kpi.color }} />
-            <div className="flex items-center gap-1.5 mb-2">
-              <kpi.icon className="w-3.5 h-3.5 text-muted-foreground" />
-              <div className="text-[9px] text-muted-foreground/60 font-bold uppercase tracking-wide">{kpi.label}</div>
-            </div>
-            <div className="text-lg font-bold text-foreground tracking-tight leading-tight">{kpi.value}</div>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="text-[10px] text-muted-foreground/50">{kpi.sub}</span>
-              {kpi.trend && (
-                <span className="text-[9px] font-semibold flex items-center gap-0.5" style={{ color: "hsl(160,80%,40%)" }}>
-                  <ArrowUpRight className="w-3 h-3" />{kpi.trend}
-                </span>
-              )}
-            </div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        {(() => {
+          const runwayColor =
+            metrics.runway === null || metrics.cashOnHand === 0 ? "hsl(220,15%,45%)" :
+            metrics.runway > 6 ? "hsl(160,80%,40%)" :
+            metrics.runway >= 3 ? "hsl(36,90%,53%)" :
+            "hsl(350,75%,50%)";
+          const runwayValue =
+            metrics.cashOnHand === 0 ? "Set balances" :
+            metrics.runway === null ? "∞" :
+            `${metrics.runway.toFixed(1)} months`;
+          const cashValue = metrics.cashOnHand === 0 ? "Set balances" : `EGP ${fmtCurrency(metrics.cashOnHand)}`;
+          const burnTrendNode = metrics.burnTrend !== null ? (
+            <span className="text-[9px] font-semibold flex items-center gap-0.5" style={{ color: metrics.burnTrend > 0 ? "hsl(350,75%,50%)" : "hsl(160,80%,40%)" }}>
+              {metrics.burnTrend > 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+              {Math.abs(metrics.burnTrend).toFixed(0)}%
+            </span>
+          ) : null;
+
+          const kpis = [
+            { icon: Wallet, label: "Cash on Hand", value: cashValue, sub: "Across all accounts", color: "hsl(220,95%,47%)", trend: null as React.ReactNode, link: metrics.cashOnHand === 0 ? "/finance" : null },
+            { icon: Activity, label: "Runway", value: runwayValue, sub: "At current burn rate", color: runwayColor, trend: null, link: null },
+            { icon: Flame, label: "Monthly Burn", value: `EGP ${fmtCurrency(metrics.monthlyBurn)}`, sub: "3-month average", color: "hsl(350,75%,50%)", trend: burnTrendNode, link: null },
+            { icon: Repeat, label: "MRR", value: `EGP ${fmtCurrency(metrics.mrr)}`, sub: "Monthly recurring", color: "hsl(168,100%,42%)", trend: null, link: null },
+            { icon: Rocket, label: "Active Ventures", value: `${metrics.liveVentures}`, sub: `${metrics.totalVentures} total`, color: "hsl(250,60%,60%)", trend: null, link: null },
+            { icon: Target, label: "Pipeline Value", value: `EGP ${fmtCurrency(metrics.pipelineValue)}`, sub: `${metrics.activePipelineDeals} active deals`, color: "hsl(36,90%,53%)", trend: null, link: null },
+          ];
+          return kpis.map((kpi) => {
+            const inner = (
+              <div className="bg-card rounded-xl p-3.5 border border-border relative overflow-hidden group hover:border-secondary/30 transition-colors h-full">
+                <div className="absolute top-0 left-0 w-[3px] h-full" style={{ background: kpi.color }} />
+                <div className="flex items-center gap-1.5 mb-2">
+                  <kpi.icon className="w-3.5 h-3.5 text-muted-foreground" />
+                  <div className="text-[9px] text-muted-foreground/60 font-bold uppercase tracking-wide">{kpi.label}</div>
+                </div>
+                <div className="text-lg font-bold tracking-tight leading-tight" style={{ color: kpi.label === "Runway" ? kpi.color : "hsl(var(--foreground))" }}>{kpi.value}</div>
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[10px] text-muted-foreground/50">{kpi.sub}</span>
+                  {kpi.trend}
+                </div>
+              </div>
+            );
+            return kpi.link ? (
+              <Link key={kpi.label} to={kpi.link}>{inner}</Link>
+            ) : (
+              <div key={kpi.label}>{inner}</div>
+            );
+          });
+        })()}
       </div>
 
       {/* ═══ ROW 2: Revenue chart + Attention ═══ */}
