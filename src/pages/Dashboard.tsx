@@ -39,8 +39,7 @@ const Dashboard = () => {
     const pipelineDeals = VENTURE_PIPELINE_SEED.length;
     const activePipelineDeals = CLIENT_PIPELINE.reduce((s, c) => s + c.deals, 0);
     const pipelineValue = CLIENT_PIPELINE.reduce((s, c) => s + c.value, 0);
-    const burnRate = totalExpenses / 7; // ~7 months of data
-    const runway = net > 0 ? Math.round(net / burnRate) : 0;
+    const burnRate = totalExpenses / 7; // ~7 months of data (legacy avg)
 
     // Monthly data
     const monthMap = new Map<string, { revenue: number; expenses: number }>();
