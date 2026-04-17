@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
 import { VENTURES_DATA, PORTFOLIO_DATA, VENTURE_PIPELINE_SEED } from "@/data/ventures";
-import { INCOME_DATA, EXPENSE_DATA, LOANS_TO_WASLA, CLIENT_PIPELINE, TEAM_DATA, fmtCurrency } from "@/data/finance";
+import { INCOME_DATA, EXPENSE_DATA, CLIENT_PIPELINE, TEAM_DATA, fmtCurrency } from "@/data/finance";
 import { TrendingUp, TrendingDown, AlertTriangle, Clock, Rocket, Briefcase, Users, DollarSign, Target, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
 
 const ChartTip = ({ active, payload, label }: any) => {
@@ -65,7 +65,7 @@ const Dashboard = () => {
 
     // Expense breakdown by category
     const catMap = new Map<string, number>();
-    EXPENSE_DATA.forEach(r => catMap.set(r.cat, (catMap.get(r.cat) || 0) + r.amount));
+    EXPENSE_DATA.forEach(r => catMap.set(r.category, (catMap.get(r.category) || 0) + r.amount));
     const expenseBreakdown = Array.from(catMap.entries())
       .sort(([, a], [, b]) => b - a)
       .map(([name, value], i) => ({
@@ -177,15 +177,20 @@ const Dashboard = () => {
             ))}
           </div>
 
-          {/* Founder loan */}
-          <div className="mt-3 bg-muted rounded-lg p-2.5" style={{ border: "1px solid hsl(250,60%,60%,0.2)" }}>
-            <div className="flex items-center gap-1.5 mb-1">
-              <DollarSign className="w-3 h-3" style={{ color: "hsl(250,60%,60%)" }} />
-              <span className="text-[11px] font-semibold text-foreground">Loans to Wasla</span>
-              <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded ml-auto" style={{ background: "hsl(250,60%,60%,0.13)", color: "hsl(250,60%,60%)" }}>Owed</span>
-            </div>
-            <div className="text-[10px] text-muted-foreground">EGP {LOANS_TO_WASLA.toLocaleString()} owed to Bassel</div>
-          </div>
+          {/* Capital from Bassel Personal */}
+          {(() => {
+            const basselPaid = EXPENSE_DATA.filter(r => r.paidBy === "Bassel Personal").reduce((s, r) => s + r.amount, 0);
+            return (
+              <div className="mt-3 bg-muted rounded-lg p-2.5" style={{ border: "1px solid hsl(250,60%,60%,0.2)" }}>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <DollarSign className="w-3 h-3" style={{ color: "hsl(250,60%,60%)" }} />
+                  <span className="text-[11px] font-semibold text-foreground">Capital Contributed</span>
+                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded ml-auto" style={{ background: "hsl(250,60%,60%,0.13)", color: "hsl(250,60%,60%)" }}>Bassel</span>
+                </div>
+                <div className="text-[10px] text-muted-foreground">EGP {basselPaid.toLocaleString()} paid by Bassel Personal</div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
