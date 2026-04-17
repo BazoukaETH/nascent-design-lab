@@ -209,19 +209,47 @@ const Dashboard = () => {
             <AlertTriangle className="w-3.5 h-3.5" style={{ color: "hsl(36,90%,53%)" }} />
             <div className="text-xs font-semibold text-foreground">Attention Required</div>
           </div>
-          <div className="text-[10px] text-muted-foreground/50 mb-3">{metrics.attentionItems.length} pending invoices · EGP {fmtCurrency(metrics.pendingRevenue)} outstanding</div>
-          <div className="space-y-2">
-            {metrics.attentionItems.map((item, i) => (
-              <div key={i} className="bg-muted rounded-lg p-2.5" style={{ border: "1px solid hsl(36,90%,53%,0.2)" }}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Clock className="w-3 h-3" style={{ color: "hsl(36,90%,53%)" }} />
-                  <span className="text-[11px] font-semibold text-foreground">{item.client}</span>
-                  <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded ml-auto" style={{ background: "hsl(36,90%,53%,0.13)", color: "hsl(36,90%,53%)" }}>Pending</span>
-                </div>
-                <div className="text-[10px] text-muted-foreground">EGP {item.amount.toLocaleString()} · {item.service}</div>
+          <div className="text-[10px] text-muted-foreground/50 mb-3">Founder alerts · pending invoices · risks</div>
+          {(() => {
+            const alerts: { tone: "red" | "amber"; text: string }[] = [];
+            if (metrics.runway !== null && metrics.cashOnHand > 0 && metrics.runway < 4) {
+              alerts.push({ tone: "red", text: `Runway ${metrics.runway.toFixed(1)} months — secure revenue or reduce burn` });
+            }
+            if (metrics.invoiceAging.sixtyPlusDays.count > 0) {
+              alerts.push({ tone: "red", text: `${metrics.invoiceAging.sixtyPlusDays.count} invoices overdue 60+ days — EGP ${fmtCurrency(metrics.invoiceAging.sixtyPlusDays.total)}` });
+            }
+            if (metrics.topClients[0] && metrics.topClients[0].percentage > 40) {
+              alerts.push({ tone: "amber", text: `${metrics.topClients[0].client} = ${metrics.topClients[0].percentage.toFixed(0)}% of revenue — concentration risk` });
+            }
+            const hasAny = alerts.length > 0 || metrics.attentionItems.length > 0;
+            const toneColor = (t: "red" | "amber") => t === "red" ? "hsl(350,75%,50%)" : "hsl(36,90%,53%)";
+            return (
+              <div className="space-y-2">
+                {alerts.map((a, i) => (
+                  <div key={`a-${i}`} className="bg-muted rounded-lg p-2.5 flex items-center gap-1.5" style={{ border: `1px solid ${toneColor(a.tone)}33`, borderLeft: `3px solid ${toneColor(a.tone)}` }}>
+                    <AlertTriangle className="w-3 h-3 shrink-0" style={{ color: toneColor(a.tone) }} />
+                    <span className="text-[11px] text-foreground">{a.text}</span>
+                  </div>
+                ))}
+                {metrics.attentionItems.map((item, i) => (
+                  <div key={i} className="bg-muted rounded-lg p-2.5" style={{ border: "1px solid hsl(36,90%,53%,0.2)" }}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Clock className="w-3 h-3" style={{ color: "hsl(36,90%,53%)" }} />
+                      <span className="text-[11px] font-semibold text-foreground">{item.client}</span>
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded ml-auto" style={{ background: "hsl(36,90%,53%,0.13)", color: "hsl(36,90%,53%)" }}>Pending</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">EGP {item.amount.toLocaleString()} · {item.service}</div>
+                  </div>
+                ))}
+                {!hasAny && (
+                  <div className="bg-muted rounded-lg p-2.5 flex items-center gap-1.5" style={{ border: "1px solid hsl(160,80%,40%,0.25)", borderLeft: "3px solid hsl(160,80%,40%)" }}>
+                    <CheckCircle2 className="w-3 h-3 shrink-0" style={{ color: "hsl(160,80%,40%)" }} />
+                    <span className="text-[11px] text-foreground">All systems stable</span>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
+            );
+          })()}
 
           {/* Capital from Bassel Personal */}
           {(() => {
