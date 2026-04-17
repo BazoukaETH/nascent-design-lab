@@ -187,6 +187,7 @@ const Pipeline = () => {
             );
           })}
         </div>
+        </div>
       )}
     </div>
   );
