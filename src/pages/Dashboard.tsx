@@ -202,6 +202,7 @@ const Dashboard = () => {
               <Bar dataKey="expenses" name="Expenses" fill="rgba(240,64,96,.45)" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Attention Required */}
