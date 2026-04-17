@@ -1,63 +1,144 @@
-export interface IncomeEntry {
+export interface MoneyInEntry {
   date: string;
   client: string;
   venture: string;
+  category: string;
   service: string;
   amount: number;
+  currency: string;
+  taxRate: string;
+  paymentMethod: string;
   status: string;
+  projectHandoff: string;
+  invoiceNumber: string;
+  recurring: string;
+  notes: string;
 }
 
-export interface ExpenseEntry {
+export interface MoneyOutEntry {
   date: string;
-  cat: string;
+  category: string;
   venture: string;
-  desc: string;
+  description: string;
   vendor: string;
   amount: number;
-  bassel: string;
+  currency: string;
+  taxRate: string;
+  paymentMethod: string;
+  status: string;
+  paidBy: string;
+  notes: string;
 }
 
-export const INCOME_DATA: IncomeEntry[] = [
-  { date: "2025-09-01", client: "SMG Automotive", venture: "Wasla Solutions", service: "Framer Website", amount: 300000, status: "Paid" },
-  { date: "2025-10-01", client: "PICO Engineering", venture: "Wasla Solutions", service: "Framer Website", amount: 200000, status: "50% Paid" },
-  { date: "2025-10-15", client: "Sports Alliance", venture: "Wasla Solutions", service: "Framer Website", amount: 25000, status: "Pending" },
-  { date: "2025-11-01", client: "ECMF", venture: "Wasla Solutions", service: "Subscriptions", amount: 120000, status: "Paid" },
-  { date: "2025-11-25", client: "Ekhdem", venture: "Wasla Solutions", service: "App Development", amount: 150000, status: "Paid" },
-  { date: "2026-01-15", client: "Hiba Abdo", venture: "Wasla Solutions", service: "Web Development", amount: 90000, status: "Pending" },
-  { date: "2026-01-26", client: "ECMF", venture: "Wasla Solutions", service: "Subscriptions", amount: 145000, status: "Paid" },
-  { date: "2026-02-10", client: "MW Fashion", venture: "Wasla Solutions", service: "Web Development", amount: 75000, status: "Pending" },
-  { date: "2026-02-14", client: "Test Client", venture: "Wasla Education", service: "Course", amount: 20000, status: "Paid" },
+// Backwards-compat aliases (legacy field names removed; pages migrate to new fields)
+export type IncomeEntry = MoneyInEntry;
+export type ExpenseEntry = MoneyOutEntry;
+
+export const MONEY_IN_SEED: MoneyInEntry[] = [
+  { date: "2025-09-15", client: "SMG Automotive", venture: "Wasla Solutions", category: "Website", service: "Framer Website", amount: 300000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "Paid", projectHandoff: "Yes", invoiceNumber: "", recurring: "No", notes: "SMG & Scania" },
+  { date: "2025-10-01", client: "PICO Engineering", venture: "Wasla Solutions", category: "Website", service: "Framer Website", amount: 200000, currency: "EGP", taxRate: "14%", paymentMethod: "Cheque", status: "Paid", projectHandoff: "Yes", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2025-10-15", client: "Cairo Capital", venture: "Wasla Solutions", category: "Web Development", service: "Web Development", amount: 150000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "50% Paid", projectHandoff: "Pending", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2025-10-15", client: "Sports Alliance", venture: "Wasla Solutions", category: "Website", service: "Framer Website", amount: 25000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "Pending", projectHandoff: "Yes", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2025-11-01", client: "ECMF", venture: "Wasla Solutions", category: "Subscriptions", service: "Subscriptions", amount: 120000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", projectHandoff: "Yes", invoiceNumber: "", recurring: "Yes", notes: "Google Emails 2025 full year" },
+  { date: "2025-11-25", client: "Ekhdem", venture: "Wasla Solutions", category: "App Development", service: "App Development", amount: 15000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "Paid", projectHandoff: "Pending", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2026-01-15", client: "Hiba Abdo", venture: "Wasla Solutions", category: "Web Development", service: "Web Development", amount: 90000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "Pending", projectHandoff: "Pending", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2026-01-26", client: "ECMF", venture: "Wasla Solutions", category: "Subscriptions", service: "Subscriptions", amount: 45000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", projectHandoff: "Yes", invoiceNumber: "", recurring: "Yes", notes: "Google Emails January 2026 till March 2026" },
+  { date: "2026-02-10", client: "MW Fashion", venture: "Wasla Solutions", category: "Web Development", service: "Web Development", amount: 75000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "50% Paid", projectHandoff: "Pending", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2026-02-25", client: "EJB", venture: "Wasla Solutions", category: "App Development", service: "App Development", amount: 100000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "50% Paid", projectHandoff: "Pending", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2026-03-03", client: "Baraka Cosmetics", venture: "Wasla Solutions", category: "Website", service: "Website + E-Store", amount: 60000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "Pending", projectHandoff: "Pending", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2026-03-05", client: "Plus One", venture: "Wasla Solutions", category: "UI/UX Design", service: "Ui/UX Full Platform", amount: 60000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "50% Paid", projectHandoff: "Pending", invoiceNumber: "", recurring: "No", notes: "" },
+  { date: "2026-03-08", client: "Bling & Beyond", venture: "Wasla Solutions", category: "E-commerce", service: "Shopify Store", amount: 75000, currency: "EGP", taxRate: "14%", paymentMethod: "Bank Transfer", status: "Pending", projectHandoff: "Pending", invoiceNumber: "", recurring: "No", notes: "" },
 ];
 
-export const EXPENSE_DATA: ExpenseEntry[] = [
-  { date: "2025-07-30", cat: "Salaries", venture: "Wasla Solutions", desc: "July Salary", vendor: "Usef Shazly", amount: 60000, bassel: "Yes" },
-  { date: "2025-08-30", cat: "Salaries", venture: "Wasla Solutions", desc: "August Salary", vendor: "Usef Shazly", amount: 60000, bassel: "Yes" },
-  { date: "2025-09-30", cat: "Salaries", venture: "Wasla Solutions", desc: "September Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
-  { date: "2025-09-30", cat: "Salaries", venture: "Wasla Solutions", desc: "September Salary", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
-  { date: "2025-09-30", cat: "Salaries", venture: "Wasla Solutions", desc: "September Salary", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
-  { date: "2025-10-30", cat: "Salaries", venture: "Wasla Solutions", desc: "October Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
-  { date: "2025-10-30", cat: "Salaries", venture: "Wasla Solutions", desc: "October Salary", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
-  { date: "2025-10-30", cat: "Salaries", venture: "Wasla Solutions", desc: "October Salary", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
-  { date: "2025-10-30", cat: "Freelancers", venture: "Wasla Solutions", desc: "Website Translation", vendor: "Merna Wagih", amount: 8000, bassel: "Yes" },
-  { date: "2025-11-30", cat: "Salaries", venture: "Wasla Solutions", desc: "November Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
-  { date: "2025-11-30", cat: "Salaries", venture: "Wasla Solutions", desc: "November Salary", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
-  { date: "2025-11-30", cat: "Salaries", venture: "Wasla Solutions", desc: "November Salary", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
-  { date: "2025-11-30", cat: "Hardware", venture: "Wasla Solutions", desc: "MacBook Air M1", vendor: "Tradeline", amount: 30000, bassel: "Yes" },
-  { date: "2025-12-30", cat: "Salaries", venture: "Wasla Solutions", desc: "December Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
-  { date: "2025-12-30", cat: "Salaries", venture: "Wasla Solutions", desc: "December Salary", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
-  { date: "2025-12-30", cat: "Salaries", venture: "Wasla Solutions", desc: "December Salary", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
-  { date: "2025-12-30", cat: "Freelancers", venture: "Wasla Solutions", desc: "Website Assistance", vendor: "Mohamed Yazan", amount: 10000, bassel: "Yes" },
-  { date: "2026-01-10", cat: "Subscriptions", venture: "Wasla Solutions", desc: "Figma Fees", vendor: "Moaz Sawy", amount: 6000, bassel: "Yes" },
-  { date: "2026-01-27", cat: "Salaries", venture: "Wasla Solutions", desc: "January Salary", vendor: "Usef Shazly", amount: 60000, bassel: "No" },
-  { date: "2026-01-27", cat: "Salaries", venture: "Wasla Solutions", desc: "January Fees", vendor: "Moaz Sawy", amount: 30000, bassel: "No" },
-  { date: "2026-01-27", cat: "Salaries", venture: "Wasla Solutions", desc: "January Fees", vendor: "Mohamed Hagry", amount: 20000, bassel: "No" },
-  { date: "2026-01-28", cat: "Fees", venture: "Wasla Ventures", desc: "Legal Accountant Fees", vendor: "Wael Khalil", amount: 22000, bassel: "Yes" },
-  { date: "2026-02-03", cat: "Subscriptions", venture: "Wasla Solutions", desc: "ECMF Emails Dec/Jan", vendor: "Google Domains", amount: 30000, bassel: "Yes" },
-  { date: "2026-02-08", cat: "Subscriptions", venture: "Wasla Solutions", desc: "Figma / Framer", vendor: "Moaz Sawy", amount: 6850, bassel: "Yes" },
-  { date: "2026-02-10", cat: "Subscriptions", venture: "Wasla Ventures", desc: "Wasla Ventures Domain", vendor: "Moaz Sawy", amount: 1000, bassel: "No" },
+export const MONEY_OUT_SEED: MoneyOutEntry[] = [
+  { date: "2025-07-30", category: "Salaries", venture: "Wasla Solutions", description: "July Salary", vendor: "Usef Shazly", amount: 60000, currency: "EGP", taxRate: "0%", paymentMethod: "Cash", status: "Paid", paidBy: "Bassel Personal", notes: "" },
+  { date: "2025-08-30", category: "Salaries", venture: "Wasla Solutions", description: "August Salary", vendor: "Usef Shazly", amount: 60000, currency: "EGP", taxRate: "0%", paymentMethod: "Cash", status: "Paid", paidBy: "Bassel Personal", notes: "" },
+  { date: "2025-09-30", category: "Salaries", venture: "Wasla Solutions", description: "September Salary", vendor: "Usef Shazly", amount: 60000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-09-30", category: "Salaries", venture: "Wasla Solutions", description: "September Salary", vendor: "Moaz Sawy", amount: 30000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-09-30", category: "Salaries", venture: "Wasla Solutions", description: "September Salary", vendor: "Mohamed Hagry", amount: 20000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-10-30", category: "Salaries", venture: "Wasla Solutions", description: "October Salary", vendor: "Usef Shazly", amount: 60000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-10-30", category: "Salaries", venture: "Wasla Solutions", description: "October Salary", vendor: "Moaz Sawy", amount: 30000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-10-30", category: "Salaries", venture: "Wasla Solutions", description: "October Salary", vendor: "Mohamed Hagry", amount: 20000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-10-30", category: "Freelancers", venture: "Wasla Solutions", description: "Website Translation", vendor: "Merna Wagih", amount: 8000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-11-30", category: "Salaries", venture: "Wasla Solutions", description: "November Salary", vendor: "Usef Shazly", amount: 60000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-11-30", category: "Salaries", venture: "Wasla Solutions", description: "November Salary", vendor: "Moaz Sawy", amount: 30000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-11-30", category: "Salaries", venture: "Wasla Solutions", description: "November Salary", vendor: "Mohamed Hagry", amount: 20000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-11-30", category: "Hardware", venture: "Wasla Solutions", description: "MacBook Air M1", vendor: "Tradeline", amount: 30000, currency: "EGP", taxRate: "0%", paymentMethod: "Cash", status: "Paid", paidBy: "Bassel Personal", notes: "" },
+  { date: "2025-12-30", category: "Salaries", venture: "Wasla Solutions", description: "December Salary", vendor: "Usef Shazly", amount: 60000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-12-30", category: "Salaries", venture: "Wasla Solutions", description: "December Salary", vendor: "Moaz Sawy", amount: 30000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-12-30", category: "Salaries", venture: "Wasla Solutions", description: "December Salary", vendor: "Mohamed Hagry", amount: 20000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2025-12-30", category: "Freelancers", venture: "Wasla Solutions", description: "Website Assistance", vendor: "Mohamed Yazan", amount: 10000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2026-01-10", category: "Subscriptions", venture: "Wasla Solutions", description: "Figma Fees (Moaz)", vendor: "Moaz Sawy", amount: 6000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2026-01-27", category: "Salaries", venture: "Wasla Solutions", description: "January Salary", vendor: "Usef Shazly", amount: 60000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2026-01-27", category: "Salaries", venture: "Wasla Solutions", description: "January Fees", vendor: "Moaz Sawy", amount: 30000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2026-01-27", category: "Salaries", venture: "Wasla Solutions", description: "January Fees", vendor: "Mohamed Hagry", amount: 20000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2026-01-28", category: "Fees", venture: "Wasla Ventures", description: "Legal Accountant Fees (Oct25-Jan26)", vendor: "Wael Khalil", amount: 22000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Bassel Personal", notes: "" },
+  { date: "2026-02-03", category: "Subscriptions", venture: "Wasla Solutions", description: "ECMF Emails Dec/Jan", vendor: "Google Domains", amount: 30000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Bassel Personal", notes: "" },
+  { date: "2026-02-08", category: "Subscriptions", venture: "Wasla Solutions", description: "Figma / Framer", vendor: "Moaz Sawy", amount: 6850, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Bassel Personal", notes: "" },
+  { date: "2026-02-10", category: "Subscriptions", venture: "Wasla Ventures", description: "Wasla Ventures Domain", vendor: "Moaz Sawy", amount: 1000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2026-02-28", category: "Salaries", venture: "Wasla Solutions", description: "February Salary", vendor: "Usef Shazly", amount: 60000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2026-03-01", category: "Salaries", venture: "Wasla Solutions", description: "February Salary", vendor: "Moaz Sawy", amount: 30000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
+  { date: "2026-03-02", category: "Salaries", venture: "Wasla Solutions", description: "February Salary", vendor: "Mohamed Hagry", amount: 20000, currency: "EGP", taxRate: "0%", paymentMethod: "Bank Transfer", status: "Paid", paidBy: "Company Bank", notes: "" },
 ];
 
-export const LOANS_TO_WASLA = 218850;
+// Backwards-compat aliases
+export const INCOME_DATA = MONEY_IN_SEED;
+export const EXPENSE_DATA = MONEY_OUT_SEED;
+
+export interface CashAccount {
+  accountName: string;
+  accountType: string;
+  owner: string;
+  currency: string;
+  balanceNative: number;
+  lastUpdated: string;
+  bankLocation: string;
+  notes: string;
+}
+
+export interface ExchangeRates {
+  usdEgp: number;
+  eurEgp: number;
+  lastUpdated: string;
+}
+
+export const EXCHANGE_RATES_SEED: ExchangeRates = {
+  usdEgp: 50.85,
+  eurEgp: 55.20,
+  lastUpdated: "2026-04-16",
+};
+
+export const CASH_ACCOUNTS_SEED: CashAccount[] = [
+  { accountName: "Wasla Ventures Business Account", accountType: "Business Bank", owner: "Wasla Ventures", currency: "EGP", balanceNative: 0, lastUpdated: "2026-04-16", bankLocation: "CIB / NBE / Other", notes: "Main operating account" },
+  { accountName: "Wasla Solutions Operating", accountType: "Business Bank", owner: "Wasla Solutions", currency: "EGP", balanceNative: 0, lastUpdated: "2026-04-16", bankLocation: "", notes: "Solutions revenue deposits" },
+  { accountName: "USD Reserve Account", accountType: "USD Account", owner: "Wasla Ventures", currency: "USD", balanceNative: 0, lastUpdated: "2026-04-16", bankLocation: "", notes: "Foreign currency reserve" },
+  { accountName: "Bassel Personal - CIB", accountType: "Personal Bank", owner: "Bassel Personal", currency: "EGP", balanceNative: 0, lastUpdated: "2026-04-16", bankLocation: "CIB", notes: "Personal funds, tracks capital contributions" },
+  { accountName: "Physical Cash (Office)", accountType: "Physical Cash", owner: "Wasla Ventures", currency: "EGP", balanceNative: 0, lastUpdated: "2026-04-16", bankLocation: "Office", notes: "Petty cash" },
+];
+
+export interface MonthlyProjection {
+  month: string;
+  revenuePlan: number;
+  burnPlan: number;
+}
+
+export const PROJECTIONS_SEED: MonthlyProjection[] = [
+  { month: "2026-01", revenuePlan: 147500, burnPlan: 155000 },
+  { month: "2026-02", revenuePlan: 147500, burnPlan: 155000 },
+  { month: "2026-03", revenuePlan: 147500, burnPlan: 155000 },
+  { month: "2026-04", revenuePlan: 160000, burnPlan: 160000 },
+  { month: "2026-05", revenuePlan: 300000, burnPlan: 197500 },
+  { month: "2026-06", revenuePlan: 407500, burnPlan: 212500 },
+  { month: "2026-07", revenuePlan: 447500, burnPlan: 297500 },
+  { month: "2026-08", revenuePlan: 535000, burnPlan: 297500 },
+  { month: "2026-09", revenuePlan: 690000, burnPlan: 390000 },
+  { month: "2026-10", revenuePlan: 746250, burnPlan: 355000 },
+  { month: "2026-11", revenuePlan: 785000, burnPlan: 380000 },
+  { month: "2026-12", revenuePlan: 842500, burnPlan: 380000 },
+];
+
+export const FY26_REVENUE_PLAN = 5356250;
+export const FY26_BURN_PLAN = 3135000;
 
 export interface SalaryEntry {
   name: string;
