@@ -48,10 +48,24 @@ const AccessDot = ({ level }: { level: AccessLevel }) => {
 
 const SettingsPage = () => {
   const { users, addUser, updateUser, removeUser } = useUsers();
+  const navigate = useNavigate();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<UserRole>("Team");
   const [inviteMessage, setInviteMessage] = useState("");
+
+  const handleAddBlank = () => {
+    const id = addUser({
+      name: "New User",
+      email: "",
+      role: "Team",
+      twoFA: false,
+      status: "Active",
+      lastActive: "",
+      invited: "",
+    });
+    navigate(`/settings/users/${id}`);
+  };
 
   const roleCounts = useMemo(() => {
     const counts: Record<UserRole, number> = { Founder: 0, Team: 0, Investor: 0, External: 0 };
