@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Key, Users, Shield, Link as LinkIcon, UserCog, Plus, X, Trash2, Send } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Key, Users, Shield, Link as LinkIcon, UserCog, Plus, X, Trash2, Send, UserPlus } from "lucide-react";
 import {
   useUsers,
   PERMISSION_MATRIX,
