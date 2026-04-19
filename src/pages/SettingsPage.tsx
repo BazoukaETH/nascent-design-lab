@@ -123,13 +123,21 @@ const SettingsPage = () => {
           icon={Users}
           title={`Users (${users.length})`}
           action={
-            <button
-              onClick={() => setInviteOpen(true)}
-              className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors"
-              style={{ background: "hsl(220,95%,47%)", color: "white" }}
-            >
-              <Plus className="w-3 h-3" /> Invite User
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleAddBlank}
+                className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors border border-border hover:border-primary/50 text-foreground"
+              >
+                <UserPlus className="w-3 h-3" /> Add User
+              </button>
+              <button
+                onClick={() => setInviteOpen(true)}
+                className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors"
+                style={{ background: "hsl(220,95%,47%)", color: "white" }}
+              >
+                <Plus className="w-3 h-3" /> Invite User
+              </button>
+            </div>
           }
         />
         <div className="bg-card border border-border rounded-xl overflow-hidden overflow-x-auto">
@@ -148,7 +156,11 @@ const SettingsPage = () => {
                 const show2FA = u.role === "Founder" || u.role === "Team";
                 return (
                   <tr key={u.id} className="border-b border-border/30 last:border-0">
-                    <td className="p-3 font-semibold text-foreground">{u.name}</td>
+                    <td className="p-3 font-semibold text-foreground">
+                      <Link to={`/settings/users/${u.id}`} className="hover:underline hover:text-primary transition-colors">
+                        {u.name}
+                      </Link>
+                    </td>
                     <td className="p-3 text-muted-foreground">{u.email || <span className="text-muted-foreground/40">-</span>}</td>
                     <td className="p-3">
                       <select
