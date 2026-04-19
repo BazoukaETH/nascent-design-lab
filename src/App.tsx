@@ -18,6 +18,7 @@ import Initiatives from "./pages/Initiatives";
 import AIAgents from "./pages/AIAgents";
 import Documents from "./pages/Documents";
 import SettingsPage from "./pages/SettingsPage";
+import UserProfile from "./pages/UserProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,6 +45,7 @@ const App = () => (
                 <Route path="/ai-agents" element={<AIAgents />} />
                 <Route path="/documents" element={<Documents />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/settings/users/:id" element={<UserProfile />} />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
