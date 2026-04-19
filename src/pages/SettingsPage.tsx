@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Key, Users, Shield, Link as LinkIcon, UserCog, Plus, X, Trash2, Send } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Key, Users, Shield, Link as LinkIcon, UserCog, Plus, X, Trash2, Send, UserPlus } from "lucide-react";
 import {
   useUsers,
   PERMISSION_MATRIX,
@@ -47,10 +48,24 @@ const AccessDot = ({ level }: { level: AccessLevel }) => {
 
 const SettingsPage = () => {
   const { users, addUser, updateUser, removeUser } = useUsers();
+  const navigate = useNavigate();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<UserRole>("Team");
   const [inviteMessage, setInviteMessage] = useState("");
+
+  const handleAddBlank = () => {
+    const id = addUser({
+      name: "New User",
+      email: "",
+      role: "Team",
+      twoFA: false,
+      status: "Active",
+      lastActive: "",
+      invited: "",
+    });
+    navigate(`/settings/users/${id}`);
+  };
 
   const roleCounts = useMemo(() => {
     const counts: Record<UserRole, number> = { Founder: 0, Team: 0, Investor: 0, External: 0 };
@@ -122,13 +137,21 @@ const SettingsPage = () => {
           icon={Users}
           title={`Users (${users.length})`}
           action={
-            <button
-              onClick={() => setInviteOpen(true)}
-              className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors"
-              style={{ background: "hsl(220,95%,47%)", color: "white" }}
-            >
-              <Plus className="w-3 h-3" /> Invite User
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleAddBlank}
+                className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors border border-border hover:border-primary/50 text-foreground"
+              >
+                <UserPlus className="w-3 h-3" /> Add User
+              </button>
+              <button
+                onClick={() => setInviteOpen(true)}
+                className="flex items-center gap-1.5 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors"
+                style={{ background: "hsl(220,95%,47%)", color: "white" }}
+              >
+                <Plus className="w-3 h-3" /> Invite User
+              </button>
+            </div>
           }
         />
         <div className="bg-card border border-border rounded-xl overflow-hidden overflow-x-auto">
@@ -147,7 +170,11 @@ const SettingsPage = () => {
                 const show2FA = u.role === "Founder" || u.role === "Team";
                 return (
                   <tr key={u.id} className="border-b border-border/30 last:border-0">
-                    <td className="p-3 font-semibold text-foreground">{u.name}</td>
+                    <td className="p-3 font-semibold text-foreground">
+                      <Link to={`/settings/users/${u.id}`} className="hover:underline hover:text-primary transition-colors">
+                        {u.name}
+                      </Link>
+                    </td>
                     <td className="p-3 text-muted-foreground">{u.email || <span className="text-muted-foreground/40">-</span>}</td>
                     <td className="p-3">
                       <select
