@@ -12,6 +12,10 @@ export interface AppUser {
   status: UserStatus;
   lastActive: string;
   invited: string;
+  additionalEmails?: string[];
+  phone?: string;
+  position?: string;
+  notes?: string;
 }
 
 const SEED_USERS: AppUser[] = [
