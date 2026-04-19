@@ -34,7 +34,7 @@ interface UserContextValue {
   currentUserId: string;
   currentUser: AppUser;
   setCurrentUserId: (id: string) => void;
-  addUser: (u: Omit<AppUser, "id">) => void;
+  addUser: (u: Omit<AppUser, "id">) => string;
   updateUser: (id: string, patch: Partial<AppUser>) => void;
   removeUser: (id: string) => void;
 }
@@ -47,8 +47,11 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
 
   const currentUser = users.find(u => u.id === currentUserId) || users[0];
 
-  const addUser: UserContextValue["addUser"] = (u) =>
-    setUsers(prev => [...prev, { ...u, id: `u${Date.now()}` }]);
+  const addUser: UserContextValue["addUser"] = (u) => {
+    const id = `u${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    setUsers(prev => [...prev, { ...u, id }]);
+    return id;
+  };
 
   const updateUser: UserContextValue["updateUser"] = (id, patch) =>
     setUsers(prev => prev.map(u => (u.id === id ? { ...u, ...patch } : u)));
