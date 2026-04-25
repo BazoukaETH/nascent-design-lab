@@ -1,40 +1,103 @@
-import { useState } from "react";
-import { Plus, Pencil, Trash2, X, ChevronDown, ChevronUp } from "lucide-react";
+import { useState, useMemo } from "react";
+import {
+  Plus, Pencil, Trash2, X, Briefcase, CheckCircle, Inbox, Mail, Star, Award,
+  Share2, MoreHorizontal, Search, ExternalLink, FileText,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useSalaries } from "@/contexts/SalaryContext";
-import { HIRING_SEED, HIRING_STATUSES, HIRING_PRIORITIES, type HiringRole } from "@/data/hiring";
+import { useUsers } from "@/contexts/UserContext";
+import { toast } from "sonner";
+import {
+  JOBS_SEED, APPLICANTS_SEED, JOB_DEPARTMENTS, VENTURES_FOR_JOBS, WORK_TYPES, EMPLOYMENT_TYPES,
+  APPLICANT_STATUSES, FIT_LEVELS, EXPERIENCE_LEVELS, RECOMMENDATIONS,
+  type Job, type Applicant, type JobStatus, type ApplicantStatus, type WorkType,
+  type EmploymentType, type FitLevel, type ExperienceLevel, type Recommendation, type Review,
+} from "@/data/jobs";
 
 interface TeamMember {
   name: string; role: string; dept: string; initials: string; color: string; equity: string; skills: string[]; bio: string; focus: string;
 }
-
-interface Advisor {
-  name: string; role: string; note: string;
-}
+interface Advisor { name: string; role: string; note: string; }
 
 const TEAM_SEED: TeamMember[] = [
-  { name: "Bassel El Aroussy", role: "Principal", dept: "Leadership", initials: "BA", color: "hsl(220,95%,47%)", equity: "55% (WV)", skills: ["Strategy", "Business Dev", "Capital Markets", "Partnerships"], bio: "Managing Principal & founder. Former securities broker managing trading platforms serving thousands. Leads all strategic decisions, partnerships, and business development.", focus: "Investor relations, business development, strategy, operations oversight" },
-  { name: "Usef El Shazly", role: "Digital Lead", dept: "Product & Design", initials: "UE", color: "hsl(168,100%,42%)", equity: "10% (WV) / 35% (Edu)", skills: ["UI/UX", "Digital Strategy", "Design Systems", "Product"], bio: "Managing Partner & Head of Design. Digital wizard with deep command of design, development, and modern tools.", focus: "Product design, Wasla Education lead, client UX delivery" },
-  { name: "Hussein Shahbender", role: "Marketing Lead", dept: "Growth", initials: "HS", color: "hsl(250,60%,60%)", equity: "15% (WV)", skills: ["Branding", "Performance Marketing", "Content", "Growth"], bio: "Co-founder & Marketing Lead. Young entrepreneur with proven track record building consumer ventures.", focus: "Brand, marketing strategy, content, client growth campaigns" },
-  { name: "Moaz El Sawy", role: "Development Lead", dept: "Engineering", initials: "ME", color: "hsl(160,80%,40%)", equity: "2% (WV) / 2.5% (Sol+Edu)", skills: ["iOS", "Android", "Full-Stack", "React Native"], bio: "Senior Software Developer. Highly skilled in iOS and Android. Emerging senior full-stack developer.", focus: "Mobile development, full-stack delivery, architecture decisions" },
-  { name: "Ali El Amir", role: "Creative Lead", dept: "Design", initials: "AE", color: "hsl(36,90%,53%)", equity: "2% (WV)", skills: ["Graphic Design", "Creative Direction", "Branding", "Motion"], bio: "Creative Lead & Creative Director at Paperwork Studio. Exceptional designer with world-class creative direction.", focus: "Visual identity, creative direction, brand assets, Paperwork collaboration" },
-  { name: "Mohab Metwali", role: "Engineering & AI Lead", dept: "Engineering", initials: "MM", color: "hsl(330,80%,60%)", equity: "1% (direct)", skills: ["AI/ML", "Blockchain", "Data Science", "C++", "System Architecture"], bio: "Senior engineer with deep expertise in AI, machine learning, data science, and blockchain.", focus: "AI integrations, advanced engineering, Wasla Labs lead, R&D" },
-  { name: "Mohamed Hagry", role: "Product Designer", dept: "Design", initials: "MH", color: "hsl(174,72%,46%)", equity: "-", skills: ["Product Design", "Figma", "User Research", "Prototyping"], bio: "Digital product designer focused on intuitive, user-centered interfaces.", focus: "Product UI design, design system maintenance, user flows" },
-  { name: "Saif Nosair", role: "Visual & Motion Designer", dept: "Design", initials: "SN", color: "hsl(24,94%,53%)", equity: "-", skills: ["Motion Design", "After Effects", "Brand Identity", "Video"], bio: "Talented visual and motion designer bringing brands to life through compelling graphics.", focus: "Motion graphics, brand videos, social content, visual campaigns" },
+  { name: "Bassel El Aroussy", role: "Principal", dept: "Leadership", initials: "BA", color: "hsl(220,95%,47%)", equity: "55% (WV)", skills: ["Strategy", "Business Dev", "Capital Markets", "Partnerships"], bio: "Managing Principal & founder.", focus: "Investor relations, business development, strategy" },
+  { name: "Usef El Shazly", role: "Digital Lead", dept: "Product & Design", initials: "UE", color: "hsl(168,100%,42%)", equity: "10% (WV) / 35% (Edu)", skills: ["UI/UX", "Digital Strategy", "Design Systems", "Product"], bio: "Managing Partner & Head of Design.", focus: "Product design, Wasla Education lead" },
+  { name: "Hussein Shahbender", role: "Marketing Lead", dept: "Growth", initials: "HS", color: "hsl(250,60%,60%)", equity: "15% (WV)", skills: ["Branding", "Performance Marketing", "Content", "Growth"], bio: "Co-founder & Marketing Lead.", focus: "Brand, marketing strategy, content" },
+  { name: "Moaz El Sawy", role: "Development Lead", dept: "Engineering", initials: "ME", color: "hsl(160,80%,40%)", equity: "2% (WV) / 2.5% (Sol+Edu)", skills: ["iOS", "Android", "Full-Stack", "React Native"], bio: "Senior Software Developer.", focus: "Mobile development, full-stack delivery" },
+  { name: "Ali El Amir", role: "Creative Lead", dept: "Design", initials: "AE", color: "hsl(36,90%,53%)", equity: "2% (WV)", skills: ["Graphic Design", "Creative Direction", "Branding", "Motion"], bio: "Creative Lead & Creative Director.", focus: "Visual identity, creative direction" },
+  { name: "Mohab Metwali", role: "Engineering & AI Lead", dept: "Engineering", initials: "MM", color: "hsl(330,80%,60%)", equity: "1% (direct)", skills: ["AI/ML", "Blockchain", "Data Science", "C++"], bio: "Senior engineer with AI expertise.", focus: "AI integrations, advanced engineering" },
+  { name: "Mohamed Hagry", role: "Product Designer", dept: "Design", initials: "MH", color: "hsl(174,72%,46%)", equity: "-", skills: ["Product Design", "Figma", "User Research"], bio: "Digital product designer.", focus: "Product UI design, design system" },
+  { name: "Saif Nosair", role: "Visual & Motion Designer", dept: "Design", initials: "SN", color: "hsl(24,94%,53%)", equity: "-", skills: ["Motion Design", "After Effects", "Brand Identity"], bio: "Visual and motion designer.", focus: "Motion graphics, brand videos" },
 ];
 
 const ADVISORS_SEED: Advisor[] = [
   { name: "Mr. Yasser Hashem", role: "Legal Advisor", note: "Top tech lawyer in Egypt. 2% equity for 3 years of legal services." },
-  { name: "Board-level Tech Advisors", role: "Technical Board", note: "Two senior developers acting at board level with strong external credibility." },
-  { name: "Strategic Business Board", role: "Business Board", note: "Three high-profile businessmen/investors providing strategic direction and network access." },
+  { name: "Board-level Tech Advisors", role: "Technical Board", note: "Two senior developers acting at board level." },
+  { name: "Strategic Business Board", role: "Business Board", note: "Three high-profile businessmen/investors." },
 ];
 
 const DEPTS = ["Leadership", "Product & Design", "Engineering", "Growth", "Design"];
 const DEPT_COLORS = ["hsl(220,95%,47%)", "hsl(168,100%,42%)", "hsl(160,80%,40%)", "hsl(250,60%,60%)", "hsl(36,90%,53%)", "hsl(330,80%,60%)", "hsl(174,72%,46%)", "hsl(24,94%,53%)"];
+
+// Color helpers
+const workTypeColor = (w: WorkType) => w === "Remote" ? "hsl(160,80%,40%)" : w === "On-site" ? "hsl(220,95%,47%)" : "hsl(250,60%,60%)";
+const jobStatusColor = (s: JobStatus) => s === "Active" ? "hsl(160,80%,40%)" : s === "Paused" ? "hsl(36,90%,53%)" : s === "Draft" ? "hsl(215,20%,55%)" : "hsl(350,75%,50%)";
+const applicantStatusColor = (s: ApplicantStatus) => {
+  switch (s) {
+    case "New": return "hsl(220,95%,47%)";
+    case "Reviewing": return "hsl(36,90%,53%)";
+    case "Interview": return "hsl(250,60%,60%)";
+    case "Offer": return "hsl(160,80%,40%)";
+    case "Hired": return "hsl(145,80%,42%)";
+    case "Rejected": return "hsl(350,75%,50%)";
+  }
+};
+const ratingColor = (r: number) => r < 3 ? { bg: "hsl(350,75%,50%)", color: "white" } : r === 3 ? { bg: "hsl(36,90%,53%)", color: "hsl(0,0%,12%)" } : { bg: "hsl(160,80%,40%)", color: "white" };
+
+const formatDate = (d: string) => {
+  if (!d) return "-";
+  try {
+    return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  } catch { return d; }
+};
+const relativeTime = (d: string) => {
+  const diff = (Date.now() - new Date(d).getTime()) / (1000 * 60 * 60 * 24);
+  if (diff < 1) return "today";
+  if (diff < 7) return `${Math.floor(diff)}d ago`;
+  if (diff < 30) return `${Math.floor(diff / 7)}w ago`;
+  if (diff < 365) return `${Math.floor(diff / 30)}mo ago`;
+  return `${Math.floor(diff / 365)}y ago`;
+};
+
+const KpiCard = ({ icon: Icon, label, value, color }: any) => (
+  <div className="bg-card border border-border rounded-xl p-3">
+    <div className="flex items-center gap-2 mb-1.5">
+      <div className="w-6 h-6 rounded-md flex items-center justify-center" style={{ background: `${color}1f` }}>
+        <Icon className="w-3 h-3" style={{ color }} />
+      </div>
+      <span className="text-[9px] uppercase tracking-wide text-muted-foreground/70 font-semibold">{label}</span>
+    </div>
+    <div className="text-[18px] font-bold text-foreground tracking-tight">{value}</div>
+  </div>
+);
+
+const Stars = ({ rating, size = 12, onChange }: { rating: number; size?: number; onChange?: (r: number) => void }) => (
+  <div className="flex items-center gap-0.5">
+    {[1, 2, 3, 4, 5].map(n => (
+      <Star
+        key={n}
+        style={{ width: size, height: size }}
+        className={`${onChange ? "cursor-pointer" : ""} ${n <= rating ? "fill-current" : ""}`}
+        color={n <= rating ? "hsl(48,95%,55%)" : "hsl(220,15%,38%)"}
+        onClick={() => onChange?.(n)}
+      />
+    ))}
+  </div>
+);
 
 const Team = () => {
   const [tab, setTab] = useState<"team" | "hiring">("team");
@@ -48,20 +111,46 @@ const Team = () => {
   const [editAdvisorIdx, setEditAdvisorIdx] = useState<number | null>(null);
   const [advisorForm, setAdvisorForm] = useState({ name: "", role: "", note: "" });
   const { addSalaryEntry } = useSalaries();
+  const { currentUser } = useUsers();
+
+  // Hiring permission
+  const canEditHiring = currentUser.role === "Founder" || (currentUser.role === "Team" && currentUser.isHiringManager);
+  const canSeeHiring = canEditHiring || currentUser.role === "Team";
 
   // Hiring state
-  const [hiringRoles, setHiringRoles] = useState<HiringRole[]>(HIRING_SEED);
-  const [hiringModal, setHiringModal] = useState(false);
-  const [editHiringIdx, setEditHiringIdx] = useState<number | null>(null);
-  const [hiringForm, setHiringForm] = useState<HiringRole>({ title: "", venture: "Wasla Solutions", department: "Engineering", priority: "Medium", status: "Open", notes: "" });
-  const [pendingDeleteHiring, setPendingDeleteHiring] = useState<{ idx: number; name: string } | null>(null);
+  const [jobs, setJobs] = useState<Job[]>(JOBS_SEED);
+  const [applicants, setApplicants] = useState<Applicant[]>(APPLICANTS_SEED);
+  const [hiringSubTab, setHiringSubTab] = useState<"jobs" | "pipeline">("jobs");
 
+  // Job modal
+  const emptyJob: Omit<Job, "id" | "createdAt" | "createdBy" | "viewCount" | "shareLink"> = {
+    title: "", department: "Engineering", venture: "Wasla Solutions", workType: "On-site",
+    location: "", employmentType: "Full-time", aboutRole: "", responsibilities: [],
+    requirements: [], niceToHave: [], salaryRange: "", status: "Draft", isPublic: true,
+  };
+  const [jobModalOpen, setJobModalOpen] = useState(false);
+  const [jobEditId, setJobEditId] = useState<string | null>(null);
+  const [jobForm, setJobForm] = useState<typeof emptyJob>(emptyJob);
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
+
+  // Pipeline filters
+  const [pipelineSearch, setPipelineSearch] = useState("");
+  const [pipelinePosition, setPipelinePosition] = useState<string>("all");
+  const [pipelineStatus, setPipelineStatus] = useState<string>("all");
+  const [pipelineAppFilter, setPipelineAppFilter] = useState<string>("all");
+
+  // Candidate modal
+  const [candidateOpen, setCandidateOpen] = useState<string | null>(null);
+  const [candidateTab, setCandidateTab] = useState<"overview" | "reviews" | "activity">("overview");
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewEditId, setReviewEditId] = useState<string | null>(null);
+  const [reviewForm, setReviewForm] = useState<{ rating: number; fit: FitLevel; experience: ExperienceLevel; recommendation: Recommendation; notes: string }>({
+    rating: 0, fit: "Good", experience: "Mid", recommendation: "Maybe", notes: "",
+  });
+
+  // Team helpers
   function resetForm() { setForm({ name: "", role: "", dept: "Engineering", skills: "", bio: "", focus: "", equity: "-" }); }
-  function openEditMember(i: number) {
-    const p = team[i];
-    setForm({ name: p.name, role: p.role, dept: p.dept, skills: p.skills.join(", "), bio: p.bio, focus: p.focus, equity: p.equity });
-    setEditIdx(i); setAddModal(true);
-  }
+  function openEditMember(i: number) { const p = team[i]; setForm({ name: p.name, role: p.role, dept: p.dept, skills: p.skills.join(", "), bio: p.bio, focus: p.focus, equity: p.equity }); setEditIdx(i); setAddModal(true); }
   function saveMember() {
     if (!form.name.trim()) return;
     const initials = form.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
@@ -80,20 +169,158 @@ const Team = () => {
   function openEditAdvisor(i: number) { const a = advisors[i]; setAdvisorForm({ name: a.name, role: a.role, note: a.note }); setEditAdvisorIdx(i); setAddAdvisorModal(true); }
   function saveAdvisor() {
     if (!advisorForm.name.trim()) return;
-    if (editAdvisorIdx !== null) { setAdvisors(prev => prev.map((a, i) => i === editAdvisorIdx ? { ...advisorForm } : a)); }
-    else { setAdvisors(prev => [...prev, { ...advisorForm }]); }
+    if (editAdvisorIdx !== null) setAdvisors(prev => prev.map((a, i) => i === editAdvisorIdx ? { ...advisorForm } : a));
+    else setAdvisors(prev => [...prev, { ...advisorForm }]);
     resetAdvisorForm(); setEditAdvisorIdx(null); setAddAdvisorModal(false);
   }
   function removeAdvisor(i: number) { setAdvisors(prev => prev.filter((_, idx) => idx !== i)); }
 
-  function openAddHiring() { setHiringForm({ title: "", venture: "Wasla Solutions", department: "Engineering", priority: "Medium", status: "Open", notes: "" }); setEditHiringIdx(null); setHiringModal(true); }
-  function openEditHiring(i: number) { setHiringForm({ ...hiringRoles[i] }); setEditHiringIdx(i); setHiringModal(true); }
-  function saveHiring() {
-    if (!hiringForm.title.trim()) return;
-    if (editHiringIdx !== null) { setHiringRoles(prev => prev.map((r, i) => i === editHiringIdx ? hiringForm : r)); }
-    else { setHiringRoles(prev => [...prev, hiringForm]); }
-    setHiringModal(false);
+  // KPI calculations
+  const kpis = useMemo(() => {
+    const total = jobs.length;
+    const active = jobs.filter(j => j.status === "Active").length;
+    const apps = applicants.length;
+    const unread = applicants.filter(a => !a.isRead).length;
+    const ratingsAll = applicants.flatMap(a => a.reviews.map(r => r.rating));
+    const avg = ratingsAll.length ? (ratingsAll.reduce((s, r) => s + r, 0) / ratingsAll.length).toFixed(1) : "—";
+    const hired = applicants.filter(a => a.status === "Hired").length;
+    return { total, active, apps, unread, avg, hired };
+  }, [jobs, applicants]);
+
+  // Job actions
+  function openCreateJob() { setJobForm(emptyJob); setJobEditId(null); setJobModalOpen(true); }
+  function openEditJob(j: Job) {
+    setJobForm({ title: j.title, department: j.department, venture: j.venture, workType: j.workType, location: j.location, employmentType: j.employmentType, aboutRole: j.aboutRole, responsibilities: [...j.responsibilities], requirements: [...j.requirements], niceToHave: [...j.niceToHave], salaryRange: j.salaryRange, status: j.status, isPublic: j.isPublic });
+    setJobEditId(j.id); setJobModalOpen(true);
   }
+  function saveJob() {
+    if (!jobForm.title.trim()) { toast.error("Title required"); return; }
+    if (jobEditId) {
+      setJobs(prev => prev.map(j => j.id === jobEditId ? { ...j, ...jobForm } : j));
+      toast.success("Job updated");
+    } else {
+      const id = `job-${Date.now()}`;
+      const slug = jobForm.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      setJobs(prev => [...prev, { ...jobForm, id, createdAt: new Date().toISOString().slice(0, 10), createdBy: currentUser.name, viewCount: 0, shareLink: `https://waslaventures.com/careers/${slug}` }]);
+      toast.success("Job created");
+    }
+    setJobModalOpen(false);
+  }
+  function deleteJob() {
+    if (!jobToDelete) return;
+    setJobs(prev => prev.filter(j => j.id !== jobToDelete.id));
+    setApplicants(prev => prev.filter(a => a.jobId !== jobToDelete.id));
+    toast.success(`${jobToDelete.title} deleted`);
+    setJobToDelete(null);
+  }
+  function copyShareLink(link: string) { navigator.clipboard.writeText(link); toast.success("Copied to clipboard"); }
+  function toggleJobStatus(j: Job, status: JobStatus) { setJobs(prev => prev.map(p => p.id === j.id ? { ...p, status } : p)); }
+  function togglePublic(j: Job) { setJobs(prev => prev.map(p => p.id === j.id ? { ...p, isPublic: !p.isPublic } : p)); }
+  function duplicateJob(j: Job) {
+    const id = `job-${Date.now()}`;
+    setJobs(prev => [...prev, { ...j, id, title: j.title + " (Copy)", status: "Draft", createdAt: new Date().toISOString().slice(0, 10), viewCount: 0 }]);
+    toast.success("Job duplicated");
+  }
+
+  function applicantCount(jobId: string) { return applicants.filter(a => a.jobId === jobId).length; }
+  function jobOf(jobId: string) { return jobs.find(j => j.id === jobId); }
+
+  // Pipeline filtering
+  const filteredApplicants = useMemo(() => {
+    return applicants.filter(a => {
+      const job = jobOf(a.jobId);
+      const matchSearch = !pipelineSearch || `${a.firstName} ${a.lastName} ${a.email} ${job?.title || ""}`.toLowerCase().includes(pipelineSearch.toLowerCase());
+      const matchPos = pipelinePosition === "all" || a.jobId === pipelinePosition;
+      const matchStatus = pipelineStatus === "all" || a.status === pipelineStatus;
+      const matchApp = pipelineAppFilter === "all"
+        || (pipelineAppFilter === "unread" && !a.isRead)
+        || (pipelineAppFilter === "hasReviews" && a.reviews.length > 0)
+        || (pipelineAppFilter === "noReviews" && a.reviews.length === 0);
+      return matchSearch && matchPos && matchStatus && matchApp;
+    });
+  }, [applicants, pipelineSearch, pipelinePosition, pipelineStatus, pipelineAppFilter, jobs]);
+
+  function openCandidate(a: Applicant) {
+    if (!a.isRead) {
+      setApplicants(prev => prev.map(p => p.id === a.id ? {
+        ...p,
+        isRead: true,
+        activity: [...p.activity, { id: `act-${Date.now()}`, actorName: currentUser.name, action: "opened applicant", timestamp: new Date().toISOString().slice(0, 16).replace("T", " ") }],
+      } : p));
+    }
+    setCandidateOpen(a.id);
+    setCandidateTab("overview");
+  }
+  function changeApplicantStatus(id: string, status: ApplicantStatus) {
+    setApplicants(prev => prev.map(a => {
+      if (a.id !== id) return a;
+      if (a.status === status) return a;
+      return {
+        ...a, status, lastUpdatedAt: new Date().toISOString().slice(0, 10),
+        activity: [...a.activity, { id: `act-${Date.now()}`, actorName: currentUser.name, action: `moved to ${status}`, timestamp: new Date().toISOString().slice(0, 16).replace("T", " ") }],
+      };
+    }));
+  }
+
+  function openAddReview(applicantId: string, existing?: Review) {
+    if (existing) {
+      setReviewForm({ rating: existing.rating, fit: existing.fit, experience: existing.experience, recommendation: existing.recommendation, notes: existing.notes });
+      setReviewEditId(existing.id);
+    } else {
+      setReviewForm({ rating: 0, fit: "Good", experience: "Mid", recommendation: "Maybe", notes: "" });
+      setReviewEditId(null);
+    }
+    setReviewModalOpen(true);
+  }
+  function saveReview() {
+    if (!candidateOpen || reviewForm.rating < 1) { toast.error("Pick a rating"); return; }
+    const ts = new Date().toISOString().slice(0, 16).replace("T", " ");
+    setApplicants(prev => prev.map(a => {
+      if (a.id !== candidateOpen) return a;
+      if (reviewEditId) {
+        return {
+          ...a,
+          reviews: a.reviews.map(r => r.id === reviewEditId ? { ...r, ...reviewForm } : r),
+          activity: [...a.activity, { id: `act-${Date.now()}`, actorName: currentUser.name, action: "edited their review", timestamp: ts }],
+        };
+      }
+      const newReview: Review = {
+        id: `rev-${Date.now()}`, reviewerId: currentUser.id, reviewerName: currentUser.name,
+        rating: reviewForm.rating, fit: reviewForm.fit, experience: reviewForm.experience,
+        recommendation: reviewForm.recommendation, notes: reviewForm.notes, createdAt: ts,
+      };
+      return {
+        ...a, reviews: [...a.reviews, newReview],
+        activity: [...a.activity, { id: `act-${Date.now()}`, actorName: currentUser.name, action: `added review (${reviewForm.rating} stars)`, timestamp: ts }],
+      };
+    }));
+    setReviewModalOpen(false);
+    toast.success(reviewEditId ? "Review updated" : "Review added");
+  }
+
+  const candidate = applicants.find(a => a.id === candidateOpen);
+  const candidateJob = candidate ? jobOf(candidate.jobId) : undefined;
+  const avgRating = candidate && candidate.reviews.length
+    ? candidate.reviews.reduce((s, r) => s + r.rating, 0) / candidate.reviews.length : 0;
+
+  function mode<T extends string>(arr: T[]): T | undefined {
+    const m = new Map<T, number>();
+    arr.forEach(v => m.set(v, (m.get(v) || 0) + 1));
+    let best: T | undefined; let bestN = 0;
+    m.forEach((n, k) => { if (n > bestN) { bestN = n; best = k; } });
+    return best;
+  }
+
+  // Repeatable list helpers for the job form
+  const updateList = (key: "responsibilities" | "requirements" | "niceToHave", idx: number, val: string) => {
+    setJobForm(prev => ({ ...prev, [key]: prev[key].map((v, i) => i === idx ? val : v) }));
+  };
+  const addListItem = (key: "responsibilities" | "requirements" | "niceToHave") => {
+    setJobForm(prev => ({ ...prev, [key]: [...prev[key], ""] }));
+  };
+  const removeListItem = (key: "responsibilities" | "requirements" | "niceToHave", idx: number) => {
+    setJobForm(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== idx) }));
+  };
 
   const tabs = [{ id: "team" as const, l: "Current Team" }, { id: "hiring" as const, l: "Hiring" }];
 
@@ -109,11 +336,6 @@ const Team = () => {
             <Plus className="w-3.5 h-3.5" /> Add Member
           </Button>
         )}
-        {tab === "hiring" && (
-          <Button size="sm" className="h-8 text-xs gap-1.5" onClick={openAddHiring}>
-            <Plus className="w-3.5 h-3.5" /> Add Role
-          </Button>
-        )}
       </div>
 
       <div className="flex gap-0 border-b border-border">
@@ -125,6 +347,7 @@ const Team = () => {
         ))}
       </div>
 
+      {/* CURRENT TEAM TAB */}
       {tab === "team" && (
         <>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -133,16 +356,11 @@ const Team = () => {
                 className="bg-card rounded-xl p-4 cursor-pointer transition-all duration-200 group relative"
                 style={{ border: `1px solid ${selected === i ? p.color : 'hsl(220,25%,16%)'}` }}>
                 <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={e => { e.stopPropagation(); openEditMember(i); }} className="w-6 h-6 rounded-md flex items-center justify-center bg-muted hover:bg-accent transition-colors">
-                    <Pencil className="w-3 h-3 text-muted-foreground" />
-                  </button>
-                  <button onClick={e => { e.stopPropagation(); removeMember(i); }} className="w-6 h-6 rounded-md flex items-center justify-center bg-muted hover:bg-destructive/20 transition-colors">
-                    <X className="w-3 h-3 text-muted-foreground" />
-                  </button>
+                  <button onClick={e => { e.stopPropagation(); openEditMember(i); }} className="w-6 h-6 rounded-md flex items-center justify-center bg-muted hover:bg-accent transition-colors"><Pencil className="w-3 h-3 text-muted-foreground" /></button>
+                  <button onClick={e => { e.stopPropagation(); removeMember(i); }} className="w-6 h-6 rounded-md flex items-center justify-center bg-muted hover:bg-destructive/20 transition-colors"><X className="w-3 h-3 text-muted-foreground" /></button>
                 </div>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                    style={{ background: `${p.color}22`, border: `2px solid ${p.color}66`, color: p.color }}>{p.initials}</div>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: `${p.color}22`, border: `2px solid ${p.color}66`, color: p.color }}>{p.initials}</div>
                   <div>
                     <div className="text-xs font-bold text-foreground">{p.name}</div>
                     <div className="text-[10px] font-semibold" style={{ color: p.color }}>{p.role}</div>
@@ -150,9 +368,7 @@ const Team = () => {
                 </div>
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[9px] bg-muted px-2 py-0.5 rounded text-muted-foreground">{p.dept}</span>
-                  {p.equity !== "-" && (
-                    <span className="text-[9px] px-2 py-0.5 rounded" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>Equity: {p.equity}</span>
-                  )}
+                  {p.equity !== "-" && <span className="text-[9px] px-2 py-0.5 rounded" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>Equity: {p.equity}</span>}
                 </div>
                 {selected === i && (
                   <div className="mt-3 pt-3 border-t border-border space-y-2.5">
@@ -160,9 +376,7 @@ const Team = () => {
                     <div>
                       <div className="text-[9px] text-muted-foreground/50 uppercase tracking-wide font-semibold mb-1">Skills</div>
                       <div className="flex flex-wrap gap-1">
-                        {p.skills.map((s, si) => (
-                          <span key={si} className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${p.color}18`, color: p.color }}>{s}</span>
-                        ))}
+                        {p.skills.map((s, si) => <span key={si} className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: `${p.color}18`, color: p.color }}>{s}</span>)}
                       </div>
                     </div>
                     <div>
@@ -175,7 +389,6 @@ const Team = () => {
             ))}
           </div>
 
-          {/* Advisory Section */}
           <div className="bg-card border border-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -190,12 +403,8 @@ const Team = () => {
               {advisors.map((a, i) => (
                 <div key={i} className="bg-muted rounded-lg p-3 group relative">
                   <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openEditAdvisor(i)} className="w-5 h-5 rounded flex items-center justify-center bg-card hover:bg-accent transition-colors">
-                      <Pencil className="w-2.5 h-2.5 text-muted-foreground" />
-                    </button>
-                    <button onClick={() => removeAdvisor(i)} className="w-5 h-5 rounded flex items-center justify-center bg-card hover:bg-destructive/20 transition-colors">
-                      <X className="w-2.5 h-2.5 text-muted-foreground" />
-                    </button>
+                    <button onClick={() => openEditAdvisor(i)} className="w-5 h-5 rounded flex items-center justify-center bg-card hover:bg-accent transition-colors"><Pencil className="w-2.5 h-2.5 text-muted-foreground" /></button>
+                    <button onClick={() => removeAdvisor(i)} className="w-5 h-5 rounded flex items-center justify-center bg-card hover:bg-destructive/20 transition-colors"><X className="w-2.5 h-2.5 text-muted-foreground" /></button>
                   </div>
                   <div className="text-[11px] font-semibold text-foreground mb-0.5">{a.name}</div>
                   <div className="text-[9px] font-semibold mb-1.5" style={{ color: "hsl(220,95%,47%)" }}>{a.role}</div>
@@ -207,38 +416,195 @@ const Team = () => {
         </>
       )}
 
-      {tab === "hiring" && (
-        <div className="space-y-3">
-          {hiringRoles.map((role, i) => {
-            const prioColor = role.priority === "High" ? "hsl(350,75%,50%)" : role.priority === "Medium" ? "hsl(36,90%,53%)" : "hsl(220,15%,38%)";
-            const statusColor = role.status === "Filled" ? "hsl(160,80%,40%)" : role.status === "Interviewing" || role.status === "Offer" ? "hsl(250,60%,60%)" : "hsl(220,95%,47%)";
-            return (
-              <div key={i} className="bg-card border border-border rounded-xl p-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[13px] font-bold text-foreground">{role.title}</span>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${prioColor}22`, color: prioColor }}>{role.priority}</span>
-                      <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${statusColor}22`, color: statusColor }}>{role.status}</span>
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">{role.venture} - {role.department}</div>
-                    {role.notes && <div className="text-[10px] text-muted-foreground/70 mt-1">{role.notes}</div>}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] px-2" onClick={() => openEditHiring(i)}>
-                      <Pencil className="w-3 h-3 mr-1" /> Edit
-                    </Button>
-                    <Button variant="outline" size="sm" className="h-6 text-[9px] px-2 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setPendingDeleteHiring({ idx: i, name: role.title })}>
-                      <Trash2 className="w-3 h-3 mr-1" /> Remove
-                    </Button>
-                  </div>
+      {/* HIRING TAB */}
+      {tab === "hiring" && !canSeeHiring && (
+        <div className="bg-card border border-border rounded-xl p-8 text-center">
+          <p className="text-[11px] text-muted-foreground">You don't have permission to view the Hiring section.</p>
+        </div>
+      )}
+
+      {tab === "hiring" && canSeeHiring && (
+        <div className="space-y-4">
+          {/* KPIs */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+            <KpiCard icon={Briefcase} label="Total Jobs" value={kpis.total} color="hsl(220,95%,47%)" />
+            <KpiCard icon={CheckCircle} label="Active" value={kpis.active} color="hsl(160,80%,40%)" />
+            <KpiCard icon={Inbox} label="Applications" value={kpis.apps} color="hsl(220,95%,47%)" />
+            <KpiCard icon={Mail} label="Unread" value={kpis.unread} color="hsl(36,90%,53%)" />
+            <KpiCard icon={Star} label="Avg Rating" value={kpis.avg} color="hsl(48,95%,55%)" />
+            <KpiCard icon={Award} label="Hired" value={kpis.hired} color="hsl(145,80%,42%)" />
+          </div>
+
+          {/* Sub-tabs */}
+          <div className="flex gap-0 border-b border-border">
+            {[{ id: "jobs" as const, l: "Jobs" }, { id: "pipeline" as const, l: "Pipeline" }].map(t => (
+              <button key={t.id} onClick={() => setHiringSubTab(t.id)}
+                className={`px-4 py-2 text-[11px] font-medium transition-colors border-b-2 ${hiringSubTab === t.id ? "text-secondary border-secondary" : "text-muted-foreground border-transparent hover:text-foreground"}`}>
+                {t.l}
+              </button>
+            ))}
+          </div>
+
+          {/* JOBS */}
+          {hiringSubTab === "jobs" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-bold text-foreground">Jobs</div>
+                  <div className="text-[10px] text-muted-foreground">{jobs.length} jobs total</div>
                 </div>
+                {canEditHiring && (
+                  <Button size="sm" className="h-8 text-xs gap-1.5" onClick={openCreateJob}>
+                    <Plus className="w-3.5 h-3.5" /> Create Job
+                  </Button>
+                )}
               </div>
-            );
-          })}
-          {hiringRoles.length === 0 && (
-            <div className="border border-dashed border-border rounded-xl p-8 text-center">
-              <p className="text-[11px] text-muted-foreground/50">No open roles. Click "Add Role" to create one.</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {jobs.map(j => {
+                  const wt = workTypeColor(j.workType);
+                  const sc = jobStatusColor(j.status);
+                  return (
+                    <div key={j.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-[12px] font-bold text-foreground leading-tight truncate">{j.title}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">{j.venture}</div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${wt}22`, color: wt }}>{j.workType}</span>
+                          {j.status !== "Active" && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sc}22`, color: sc }}>{j.status}</span>}
+                        </div>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground/80 flex flex-wrap gap-x-1.5">
+                        <span>{j.location}</span><span>·</span><span>{j.employmentType}</span><span>·</span><span>{relativeTime(j.createdAt)}</span>
+                      </div>
+                      <div className="border-t border-border/60 pt-2 text-[10px] text-muted-foreground flex items-center justify-between">
+                        <span>{j.viewCount} views · {applicantCount(j.id)} applicants</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {canEditHiring && (
+                          <>
+                            <Button size="sm" variant="outline" className="h-6 text-[9px] px-2 gap-1" onClick={() => openEditJob(j)}><Pencil className="w-3 h-3" /> Edit</Button>
+                            <Button size="sm" variant="outline" className="h-6 text-[9px] px-2 gap-1 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => setJobToDelete(j)}><Trash2 className="w-3 h-3" /> Delete</Button>
+                          </>
+                        )}
+                        <Button size="sm" variant="outline" className="h-6 text-[9px] px-2 gap-1" onClick={() => copyShareLink(j.shareLink)}><Share2 className="w-3 h-3" /> Share</Button>
+                        {canEditHiring && (
+                          <div className="relative group">
+                            <Button size="sm" variant="outline" className="h-6 w-6 p-0"><MoreHorizontal className="w-3 h-3" /></Button>
+                            <div className="absolute right-0 top-full mt-1 hidden group-hover:block bg-popover border border-border rounded-lg shadow-lg py-1 z-10 min-w-[140px]">
+                              {j.status === "Active" && <button onClick={() => toggleJobStatus(j, "Paused")} className="block w-full text-left px-3 py-1.5 text-[10px] hover:bg-muted text-foreground">Pause</button>}
+                              {j.status === "Paused" && <button onClick={() => toggleJobStatus(j, "Active")} className="block w-full text-left px-3 py-1.5 text-[10px] hover:bg-muted text-foreground">Resume</button>}
+                              {j.status === "Draft" && <button onClick={() => toggleJobStatus(j, "Active")} className="block w-full text-left px-3 py-1.5 text-[10px] hover:bg-muted text-foreground">Activate</button>}
+                              {j.status !== "Closed" && <button onClick={() => toggleJobStatus(j, "Closed")} className="block w-full text-left px-3 py-1.5 text-[10px] hover:bg-muted text-foreground">Close</button>}
+                              <button onClick={() => duplicateJob(j)} className="block w-full text-left px-3 py-1.5 text-[10px] hover:bg-muted text-foreground">Duplicate</button>
+                              <button onClick={() => togglePublic(j)} className="block w-full text-left px-3 py-1.5 text-[10px] hover:bg-muted text-foreground">Make {j.isPublic ? "Private" : "Public"}</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* PIPELINE */}
+          {hiringSubTab === "pipeline" && (
+            <div className="space-y-3">
+              <div>
+                <div className="text-sm font-bold text-foreground">Candidates</div>
+                <div className="text-[10px] text-muted-foreground">{applicants.length} total applications</div>
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={pipelineSearch} onChange={e => setPipelineSearch(e.target.value)} placeholder="Search name, email, position..." className="h-8 text-xs pl-8" />
+                </div>
+                <Select value={pipelinePosition} onValueChange={setPipelinePosition}>
+                  <SelectTrigger className="h-8 text-xs w-[180px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Positions</SelectItem>
+                    {jobs.map(j => <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={pipelineStatus} onValueChange={setPipelineStatus}>
+                  <SelectTrigger className="h-8 text-xs w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    {APPLICANT_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={pipelineAppFilter} onValueChange={setPipelineAppFilter}>
+                  <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Applications</SelectItem>
+                    <SelectItem value="unread">Unread Only</SelectItem>
+                    <SelectItem value="hasReviews">Has Reviews</SelectItem>
+                    <SelectItem value="noReviews">No Reviews</SelectItem>
+                  </SelectContent>
+                </Select>
+                <span className="text-[10px] text-muted-foreground">{filteredApplicants.length} applications</span>
+              </div>
+
+              {/* Table */}
+              <div className="bg-card border border-border rounded-xl overflow-hidden overflow-x-auto">
+                <table className="w-full text-[11px] min-w-[800px]">
+                  <thead>
+                    <tr className="border-b border-border">
+                      {["Name", "Email", "Position", "Applied", "Rating", "Status", "Actions"].map(h => (
+                        <th key={h} className="text-left p-3 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredApplicants.length === 0 && (
+                      <tr><td colSpan={7} className="p-8 text-center text-muted-foreground/60 text-[11px]">No candidates yet. Share the job link to start receiving applications.</td></tr>
+                    )}
+                    {filteredApplicants.map(a => {
+                      const job = jobOf(a.jobId);
+                      const avg = a.reviews.length ? a.reviews.reduce((s, r) => s + r.rating, 0) / a.reviews.length : 0;
+                      const sc = applicantStatusColor(a.status);
+                      return (
+                        <tr key={a.id} className="border-b border-border/30 last:border-0 hover:bg-muted/30 cursor-pointer" onClick={() => openCandidate(a)}>
+                          <td className="p-3 font-semibold text-foreground">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2 h-2 rounded-full" style={{ background: a.isRead ? "hsl(215,20%,40%)" : "hsl(220,95%,47%)" }} />
+                              {a.firstName} {a.lastName}
+                            </div>
+                          </td>
+                          <td className="p-3 text-muted-foreground font-mono text-[10px]">{a.email}</td>
+                          <td className="p-3 text-muted-foreground">{job?.title || "-"}</td>
+                          <td className="p-3 text-muted-foreground">{formatDate(a.appliedAt)}</td>
+                          <td className="p-3">
+                            {avg ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={ratingColor(avg)}>{avg.toFixed(1)}</span>
+                            ) : <span className="text-muted-foreground/40">—</span>}
+                          </td>
+                          <td className="p-3">
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1" style={{ background: `${sc}22`, color: sc }}>
+                              {a.status === "Hired" && <CheckCircle className="w-2.5 h-2.5" />}
+                              {a.status}
+                            </span>
+                          </td>
+                          <td className="p-3" onClick={e => e.stopPropagation()}>
+                            <div className="flex items-center gap-2">
+                              <a href={a.cvUrl} target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-foreground" title="View CV"><ExternalLink className="w-3 h-3" /></a>
+                              {canEditHiring && (
+                                <button onClick={() => { if (confirm(`Reject ${a.firstName}?`)) changeApplicantStatus(a.id, "Rejected"); }} className="text-muted-foreground hover:text-destructive" title="Reject"><X className="w-3 h-3" /></button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
@@ -249,16 +615,16 @@ const Team = () => {
         <DialogContent className="sm:max-w-[480px] bg-card border-border">
           <DialogHeader><DialogTitle>{editIdx !== null ? "Edit Team Member" : "Add Team Member"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Full Name *</label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. John Doe" className="h-8 text-xs" /></div>
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Role</label><Input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} placeholder="e.g. Frontend Developer" className="h-8 text-xs" /></div>
+            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Full Name *</label><Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="h-8 text-xs" /></div>
+            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Role</label><Input value={form.role} onChange={e => setForm({ ...form, role: e.target.value })} className="h-8 text-xs" /></div>
             <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Department</label>
               <Select value={form.dept} onValueChange={v => setForm({ ...form, dept: v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{DEPTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
             </div>
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Equity</label><Input value={form.equity} onChange={e => setForm({ ...form, equity: e.target.value })} placeholder="e.g. 2% (WV)" className="h-8 text-xs" /></div>
+            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Equity</label><Input value={form.equity} onChange={e => setForm({ ...form, equity: e.target.value })} className="h-8 text-xs" /></div>
           </div>
-          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Skills (comma-separated)</label><Input value={form.skills} onChange={e => setForm({ ...form, skills: e.target.value })} placeholder="e.g. React, TypeScript" className="h-8 text-xs" /></div>
-          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Bio</label><Input value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} placeholder="Short bio..." className="h-8 text-xs" /></div>
-          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Current Focus</label><Input value={form.focus} onChange={e => setForm({ ...form, focus: e.target.value })} placeholder="What they're working on..." className="h-8 text-xs" /></div>
+          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Skills (comma-separated)</label><Input value={form.skills} onChange={e => setForm({ ...form, skills: e.target.value })} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Bio</label><Input value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Current Focus</label><Input value={form.focus} onChange={e => setForm({ ...form, focus: e.target.value })} className="h-8 text-xs" /></div>
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => { setAddModal(false); setEditIdx(null); resetForm(); }} className="text-xs h-8">Cancel</Button>
             <Button onClick={saveMember} disabled={!form.name.trim()} className="text-xs h-8">{editIdx !== null ? "Save Changes" : "Add Member"}</Button>
@@ -271,10 +637,10 @@ const Team = () => {
         <DialogContent className="sm:max-w-[420px] bg-card border-border">
           <DialogHeader><DialogTitle>{editAdvisorIdx !== null ? "Edit Advisor" : "Add Advisor"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Name *</label><Input value={advisorForm.name} onChange={e => setAdvisorForm({ ...advisorForm, name: e.target.value })} placeholder="e.g. Jane Smith" className="h-8 text-xs" /></div>
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Role</label><Input value={advisorForm.role} onChange={e => setAdvisorForm({ ...advisorForm, role: e.target.value })} placeholder="e.g. Financial Advisor" className="h-8 text-xs" /></div>
+            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Name *</label><Input value={advisorForm.name} onChange={e => setAdvisorForm({ ...advisorForm, name: e.target.value })} className="h-8 text-xs" /></div>
+            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Role</label><Input value={advisorForm.role} onChange={e => setAdvisorForm({ ...advisorForm, role: e.target.value })} className="h-8 text-xs" /></div>
           </div>
-          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Note</label><Input value={advisorForm.note} onChange={e => setAdvisorForm({ ...advisorForm, note: e.target.value })} placeholder="Key details..." className="h-8 text-xs" /></div>
+          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Note</label><Input value={advisorForm.note} onChange={e => setAdvisorForm({ ...advisorForm, note: e.target.value })} className="h-8 text-xs" /></div>
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => { setAddAdvisorModal(false); setEditAdvisorIdx(null); resetAdvisorForm(); }} className="text-xs h-8">Cancel</Button>
             <Button onClick={saveAdvisor} disabled={!advisorForm.name.trim()} className="text-xs h-8">{editAdvisorIdx !== null ? "Save Changes" : "Add Advisor"}</Button>
@@ -282,41 +648,256 @@ const Team = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Hiring Dialog */}
-      <Dialog open={hiringModal} onOpenChange={setHiringModal}>
-        <DialogContent className="sm:max-w-[480px] bg-card border-border">
-          <DialogHeader><DialogTitle>{editHiringIdx !== null ? "Edit Role" : "Add Open Role"}</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Role Title *</label><Input value={hiringForm.title} onChange={e => setHiringForm({ ...hiringForm, title: e.target.value })} placeholder="e.g. Senior Backend Developer" className="h-8 text-xs" /></div>
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Venture</label><Input value={hiringForm.venture} onChange={e => setHiringForm({ ...hiringForm, venture: e.target.value })} className="h-8 text-xs" /></div>
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Department</label>
-              <Select value={hiringForm.department} onValueChange={v => setHiringForm({ ...hiringForm, department: v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{DEPTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
+      {/* Create/Edit Job Dialog */}
+      <Dialog open={jobModalOpen} onOpenChange={setJobModalOpen}>
+        <DialogContent className="sm:max-w-[720px] bg-card border-border max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{jobEditId ? "Edit Job" : "Create Job"}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Job Title *</label><Input value={jobForm.title} onChange={e => setJobForm({ ...jobForm, title: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Department *</label>
+                <Select value={jobForm.department} onValueChange={v => setJobForm({ ...jobForm, department: v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{JOB_DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Venture *</label>
+                <Select value={jobForm.venture} onValueChange={v => setJobForm({ ...jobForm, venture: v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{VENTURES_FOR_JOBS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Work Type *</label>
+                <Select value={jobForm.workType} onValueChange={v => setJobForm({ ...jobForm, workType: v as WorkType })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{WORK_TYPES.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Location *</label><Input value={jobForm.location} onChange={e => setJobForm({ ...jobForm, location: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Employment Type *</label>
+                <Select value={jobForm.employmentType} onValueChange={v => setJobForm({ ...jobForm, employmentType: v as EmploymentType })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{EMPLOYMENT_TYPES.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1 col-span-2"><label className="text-[10px] text-muted-foreground font-medium">Salary Range</label><Input value={jobForm.salaryRange} onChange={e => setJobForm({ ...jobForm, salaryRange: e.target.value })} placeholder="e.g. 25K-40K EGP" className="h-8 text-xs" /></div>
             </div>
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Priority</label>
-              <Select value={hiringForm.priority} onValueChange={v => setHiringForm({ ...hiringForm, priority: v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{HIRING_PRIORITIES.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent></Select>
-            </div>
-            <div className="space-y-1 col-span-2"><label className="text-[10px] text-muted-foreground font-medium">Status</label>
-              <Select value={hiringForm.status} onValueChange={v => setHiringForm({ ...hiringForm, status: v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{HIRING_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+
+            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">About the Role *</label><Textarea value={jobForm.aboutRole} onChange={e => setJobForm({ ...jobForm, aboutRole: e.target.value })} rows={4} className="text-xs" /></div>
+
+            {(["responsibilities", "requirements", "niceToHave"] as const).map(key => (
+              <div key={key} className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] text-muted-foreground font-medium capitalize">{key === "niceToHave" ? "Nice to Have" : key}</label>
+                  <button type="button" onClick={() => addListItem(key)} className="text-[10px] text-primary hover:underline">+ Add</button>
+                </div>
+                {jobForm[key].map((v, i) => (
+                  <div key={i} className="flex items-center gap-1.5">
+                    <Input value={v} onChange={e => updateList(key, i, e.target.value)} className="h-7 text-xs" />
+                    <button type="button" onClick={() => removeListItem(key, i)} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Status</label>
+                <Select value={jobForm.status} onValueChange={v => setJobForm({ ...jobForm, status: v as JobStatus })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{["Draft", "Active", "Paused"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] text-muted-foreground font-medium">Public Listing</label>
+                <button onClick={() => setJobForm({ ...jobForm, isPublic: !jobForm.isPublic })} className="h-8 px-3 rounded-md border border-border bg-background text-xs flex items-center gap-2">
+                  <span className="relative inline-flex items-center w-8 h-4 rounded-full transition-colors" style={{ background: jobForm.isPublic ? "hsl(160,80%,40%)" : "hsl(220,15%,38%,0.4)" }}>
+                    <span className="inline-block w-3 h-3 bg-white rounded-full transition-transform" style={{ transform: jobForm.isPublic ? "translateX(18px)" : "translateX(2px)" }} />
+                  </span>
+                  {jobForm.isPublic ? "Yes" : "No"}
+                </button>
+              </div>
             </div>
           </div>
-          <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Notes</label><Textarea value={hiringForm.notes} onChange={e => setHiringForm({ ...hiringForm, notes: e.target.value })} className="text-xs min-h-[60px]" /></div>
-          <div className="flex gap-2 justify-end">
-            <Button variant="outline" onClick={() => setHiringModal(false)} className="text-xs h-8">Cancel</Button>
-            <Button onClick={saveHiring} disabled={!hiringForm.title.trim()} className="text-xs h-8">{editHiringIdx !== null ? "Save" : "Add Role"}</Button>
-          </div>
+          <DialogFooter className="sticky bottom-0 bg-card pt-3">
+            <Button variant="outline" onClick={() => setJobModalOpen(false)} className="text-xs h-8">Cancel</Button>
+            <Button onClick={saveJob} className="text-xs h-8">{jobEditId ? "Save Changes" : "Save Job"}</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Hiring Confirmation */}
-      <Dialog open={!!pendingDeleteHiring} onOpenChange={() => setPendingDeleteHiring(null)}>
-        <DialogContent className="sm:max-w-[380px] bg-card border-border">
+      {/* Delete Job */}
+      <Dialog open={!!jobToDelete} onOpenChange={() => setJobToDelete(null)}>
+        <DialogContent className="sm:max-w-[400px] bg-card border-border">
           <DialogHeader>
-            <DialogTitle>Remove Role</DialogTitle>
-            <DialogDescription>Remove <strong>{pendingDeleteHiring?.name}</strong> from open roles?</DialogDescription>
+            <DialogTitle>Delete {jobToDelete?.title}?</DialogTitle>
+            <DialogDescription>This cannot be undone. {jobToDelete && applicantCount(jobToDelete.id)} applications will also be deleted.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPendingDeleteHiring(null)} className="text-xs h-8">Cancel</Button>
-            <Button variant="destructive" onClick={() => { if (pendingDeleteHiring) { setHiringRoles(prev => prev.filter((_, i) => i !== pendingDeleteHiring.idx)); setPendingDeleteHiring(null); } }} className="text-xs h-8">Remove</Button>
+            <Button variant="outline" onClick={() => setJobToDelete(null)} className="text-xs h-8">Cancel</Button>
+            <Button variant="destructive" onClick={deleteJob} className="text-xs h-8">Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Candidate Detail Modal */}
+      <Dialog open={!!candidateOpen} onOpenChange={() => setCandidateOpen(null)}>
+        <DialogContent className="sm:max-w-[900px] bg-card border-border max-h-[90vh] overflow-y-auto">
+          {candidate && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <DialogTitle className="text-lg">{candidate.firstName} {candidate.lastName}</DialogTitle>
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${applicantStatusColor(candidate.status)}22`, color: applicantStatusColor(candidate.status) }}>{candidate.status}</span>
+                    </div>
+                    <div className="text-[10px] text-muted-foreground mt-2 flex flex-wrap gap-x-2">
+                      <span>{candidate.email}</span>
+                      {candidate.phone && <><span>·</span><span>{candidate.phone}</span></>}
+                      {candidate.location && <><span>·</span><span>{candidate.location}</span></>}
+                      <span>·</span><span>Applied {formatDate(candidate.appliedAt)}</span>
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="flex gap-0 border-b border-border">
+                {[
+                  { id: "overview" as const, l: "Overview" },
+                  { id: "reviews" as const, l: `Reviews (${candidate.reviews.length})` },
+                  { id: "activity" as const, l: `Activity (${candidate.activity.length})` },
+                ].map(t => (
+                  <button key={t.id} onClick={() => setCandidateTab(t.id)}
+                    className={`px-4 py-2 text-[11px] font-medium transition-colors border-b-2 ${candidateTab === t.id ? "text-secondary border-secondary" : "text-muted-foreground border-transparent hover:text-foreground"}`}>
+                    {t.l}
+                  </button>
+                ))}
+              </div>
+
+              {candidateTab === "overview" && (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                  <div className="md:col-span-3 space-y-3">
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-1">Cover Note</div>
+                      <p className="text-[11px] italic text-muted-foreground leading-relaxed">{candidate.coverNote || "—"}</p>
+                    </div>
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-1.5">About</div>
+                      <div className="space-y-1 text-[11px]">
+                        <div><span className="text-muted-foreground">Position: </span><span className="text-foreground font-semibold">{candidateJob?.title}</span></div>
+                        <div><span className="text-muted-foreground">Applied: </span>{formatDate(candidate.appliedAt)}</div>
+                        {candidate.location && <div><span className="text-muted-foreground">Location: </span>{candidate.location}</div>}
+                        {candidate.linkedin && <div><span className="text-muted-foreground">LinkedIn: </span><a href={candidate.linkedin} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{candidate.linkedin}</a></div>}
+                        {candidate.portfolio && <div><span className="text-muted-foreground">Portfolio: </span><a href={candidate.portfolio} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{candidate.portfolio}</a></div>}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-1.5">CV</div>
+                      <a href={candidate.cvUrl} target="_blank" rel="noopener noreferrer">
+                        <Button size="sm" className="h-8 text-xs gap-1.5"><FileText className="w-3.5 h-3.5" /> View CV</Button>
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2 space-y-3">
+                    <div className="bg-muted/40 rounded-lg p-3">
+                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-2">Current Status</div>
+                      <Select value={candidate.status} onValueChange={v => changeApplicantStatus(candidate.id, v as ApplicantStatus)} disabled={!canEditHiring}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>{APPLICANT_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+
+                    {candidate.reviews.length > 0 && (
+                      <div className="bg-muted/40 rounded-lg p-3">
+                        <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-2">Rating Summary</div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl font-bold" style={{ color: ratingColor(avgRating).bg }}>{avgRating.toFixed(1)}</span>
+                          <Stars rating={Math.round(avgRating)} size={14} />
+                        </div>
+                        <div className="text-[10px] space-y-0.5 text-muted-foreground">
+                          <div>Fit: <span className="text-foreground">{mode(candidate.reviews.map(r => r.fit))}</span></div>
+                          <div>Experience: <span className="text-foreground">{mode(candidate.reviews.map(r => r.experience))}</span></div>
+                          <div>Recommendation: <span className="text-foreground">{mode(candidate.reviews.map(r => r.recommendation))}</span></div>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground/70 mt-2">{candidate.reviews.length} {candidate.reviews.length === 1 ? "review" : "reviews"} from {Array.from(new Set(candidate.reviews.map(r => r.reviewerName))).join(", ")}</div>
+                      </div>
+                    )}
+
+                    <div className="bg-muted/40 rounded-lg p-3 space-y-2">
+                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold">Quick Actions</div>
+                      {canEditHiring && (
+                        <>
+                          <Button size="sm" variant="outline" className="w-full h-8 text-xs gap-1.5" onClick={() => openAddReview(candidate.id)}><Plus className="w-3 h-3" /> Add Review</Button>
+                          <Button size="sm" variant="outline" className="w-full h-8 text-xs" onClick={() => changeApplicantStatus(candidate.id, "Interview")}>Move to Interview</Button>
+                          <Button size="sm" variant="outline" className="w-full h-8 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => { if (confirm("Reject this candidate?")) changeApplicantStatus(candidate.id, "Rejected"); }}>Reject</Button>
+                        </>
+                      )}
+                      {!canEditHiring && <p className="text-[10px] text-muted-foreground">Read-only view.</p>}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {candidateTab === "reviews" && (
+                <div className="space-y-3">
+                  {canEditHiring && (
+                    <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => openAddReview(candidate.id)}><Plus className="w-3.5 h-3.5" /> Add Review</Button>
+                  )}
+                  {candidate.reviews.length === 0 && <div className="text-[11px] text-muted-foreground text-center py-6">No reviews yet.</div>}
+                  {[...candidate.reviews].reverse().map(r => (
+                    <div key={r.id} className="bg-muted/40 rounded-lg p-3">
+                      <div className="flex items-start justify-between mb-1.5">
+                        <div className="text-[11px] font-bold text-foreground">{r.reviewerName}</div>
+                        <div className="text-[9px] text-muted-foreground">{r.createdAt}</div>
+                      </div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Stars rating={r.rating} size={12} />
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={ratingColor(r.rating)}>{r.rating}/5</span>
+                      </div>
+                      <div className="text-[10px] text-muted-foreground mb-1.5">
+                        Fit: <span className="text-foreground font-medium">{r.fit}</span> · Experience: <span className="text-foreground font-medium">{r.experience}</span> · Recommend: <span className="text-foreground font-medium">{r.recommendation}</span>
+                      </div>
+                      {r.notes && <div className="text-[11px] text-muted-foreground leading-relaxed">{r.notes}</div>}
+                      {r.reviewerId === currentUser.id && (
+                        <Button size="sm" variant="outline" className="h-6 text-[10px] mt-2 gap-1" onClick={() => openAddReview(candidate.id, r)}><Pencil className="w-3 h-3" /> Edit</Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {candidateTab === "activity" && (
+                <div className="space-y-2">
+                  {[...candidate.activity].reverse().map(act => (
+                    <div key={act.id} className="flex items-start gap-2.5">
+                      <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(220,95%,47%)" }} />
+                      <div className="flex-1">
+                        <div className="text-[11px] text-foreground"><span className="font-semibold">{act.actorName}</span> {act.action}</div>
+                        <div className="text-[9px] text-muted-foreground">{act.timestamp}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Review Sub-Modal */}
+      <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
+        <DialogContent className="sm:max-w-[560px] bg-card border-border">
+          <DialogHeader><DialogTitle>{reviewEditId ? "Edit Review" : "Add Review"} for {candidate?.firstName} {candidate?.lastName}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Rating *</label>
+              <Stars rating={reviewForm.rating} size={20} onChange={r => setReviewForm({ ...reviewForm, rating: r })} />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Fit *</label>
+                <Select value={reviewForm.fit} onValueChange={v => setReviewForm({ ...reviewForm, fit: v as FitLevel })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{FIT_LEVELS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Experience *</label>
+                <Select value={reviewForm.experience} onValueChange={v => setReviewForm({ ...reviewForm, experience: v as ExperienceLevel })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{EXPERIENCE_LEVELS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Recommend *</label>
+                <Select value={reviewForm.recommendation} onValueChange={v => setReviewForm({ ...reviewForm, recommendation: v as Recommendation })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{RECOMMENDATIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Notes</label>
+              <Textarea value={reviewForm.notes} onChange={e => setReviewForm({ ...reviewForm, notes: e.target.value })} rows={4} placeholder="Any specific observations, concerns, or strengths..." className="text-xs" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReviewModalOpen(false)} className="text-xs h-8">Cancel</Button>
+            <Button onClick={saveReview} className="text-xs h-8">Submit Review</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

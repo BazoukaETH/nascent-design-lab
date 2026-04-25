@@ -16,6 +16,7 @@ export interface AppUser {
   phone?: string;
   position?: string;
   notes?: string;
+  isHiringManager?: boolean;
 }
 
 const SEED_USERS: AppUser[] = [
