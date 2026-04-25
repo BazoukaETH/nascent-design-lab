@@ -158,7 +158,7 @@ const SettingsPage = () => {
           <table className="w-full text-[11px] min-w-[900px]">
             <thead>
               <tr className="border-b border-border">
-                {["Name", "Email", "Role", "2FA", "Status", "Last Active", "Invited", "Actions"].map(h => (
+                {["Name", "Email", "Role", "Hiring Mgr", "2FA", "Status", "Last Active", "Invited", "Actions"].map(h => (
                   <th key={h} className="text-left p-3 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -185,6 +185,22 @@ const SettingsPage = () => {
                       >
                         {ROLES.map(r => <option key={r} value={r} className="bg-card text-foreground">{r}</option>)}
                       </select>
+                    </td>
+                    <td className="p-3">
+                      {u.role === "Team" ? (
+                        <button
+                          onClick={() => updateUser(u.id, { isHiringManager: !u.isHiringManager })}
+                          className="relative inline-flex items-center w-8 h-4 rounded-full transition-colors"
+                          style={{ background: u.isHiringManager ? "hsl(160,80%,40%)" : "hsl(220,15%,38%,0.4)" }}
+                          title="Toggle Hiring Manager"
+                        >
+                          <span className="inline-block w-3 h-3 bg-white rounded-full transition-transform" style={{ transform: u.isHiringManager ? "translateX(18px)" : "translateX(2px)" }} />
+                        </button>
+                      ) : u.role === "Founder" ? (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(160,80%,40%,0.15)", color: "hsl(160,80%,45%)" }}>Auto</span>
+                      ) : (
+                        <span className="text-muted-foreground/30 text-[10px]">n/a</span>
+                      )}
                     </td>
                     <td className="p-3">
                       {show2FA ? (
