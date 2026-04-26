@@ -623,8 +623,198 @@ const Team = () => {
               </div>
             </div>
           )}
+
+          {/* TALENT POOL */}
+          {hiringSubTab === "pool" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <div className="text-sm font-bold text-foreground">Talent Pool</div>
+                  <div className="text-[10px] text-muted-foreground">All candidates across roles. Use this view to find people for current and future opportunities.</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5 bg-muted rounded-md p-0.5">
+                    <button onClick={() => setPoolView("grid")} className={`p-1 rounded ${poolView === "grid" ? "bg-card text-foreground" : "text-muted-foreground"}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => setPoolView("table")} className={`p-1 rounded ${poolView === "table" ? "bg-card text-foreground" : "text-muted-foreground"}`}><List className="w-3.5 h-3.5" /></button>
+                  </div>
+                  {canEditHiring && <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setPoolModalOpen(true)}><UserPlus className="w-3.5 h-3.5" /> Add to Pool</Button>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <KpiCard icon={Users} label="Total Pool" value={poolKpis.total} color="hsl(220,95%,47%)" />
+                <KpiCard icon={Star} label="Open to Future" value={poolKpis.future} color="hsl(160,80%,40%)" />
+                <KpiCard icon={Briefcase} label="External Talent" value={poolKpis.external} color="hsl(36,90%,53%)" />
+                <KpiCard icon={Sparkles} label="Top Skill" value={poolKpis.topSkill} color="hsl(250,60%,60%)" />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={poolSearch} onChange={e => setPoolSearch(e.target.value)} placeholder="Search name, email, skills..." className="h-8 text-xs pl-8" />
+                </div>
+                <Select value={poolSource} onValueChange={setPoolSource}>
+                  <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All Sources</SelectItem>{APPLICANT_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+                <Select value={poolStatus} onValueChange={setPoolStatus}>
+                  <SelectTrigger className="h-8 text-xs w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All Statuses</SelectItem>{APPLICANT_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+                <button onClick={() => setPoolAvailableOnly(!poolAvailableOnly)} className="h-8 px-3 rounded-md border border-border bg-background text-[10px] flex items-center gap-2">
+                  <span className="relative inline-flex items-center w-7 h-3.5 rounded-full" style={{ background: poolAvailableOnly ? "hsl(160,80%,40%)" : "hsl(220,15%,38%,0.4)" }}>
+                    <span className="inline-block w-2.5 h-2.5 bg-white rounded-full transition-transform" style={{ transform: poolAvailableOnly ? "translateX(15px)" : "translateX(2px)" }} />
+                  </span>
+                  Available only
+                </button>
+              </div>
+
+              {/* Tag filter pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {TALENT_POOL_TAGS.slice(0, 14).map(t => {
+                  const active = poolTags.includes(t);
+                  return (
+                    <button key={t} onClick={() => setPoolTags(prev => active ? prev.filter(x => x !== t) : [...prev, t])}
+                      className={`text-[9px] px-2 py-0.5 rounded-full border transition-colors ${active ? "bg-primary/20 border-primary text-primary" : "bg-muted border-border text-muted-foreground hover:text-foreground"}`}>
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="text-[10px] text-muted-foreground">{filteredPool.length} of {applicants.length} candidates</div>
+
+              {filteredPool.length === 0 && (
+                <div className="bg-card border border-border rounded-xl p-8 text-center text-[11px] text-muted-foreground/60">Your talent pool will grow as candidates apply and as you add people through outreach.</div>
+              )}
+
+              {poolView === "grid" && filteredPool.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredPool.map(a => {
+                    const job = jobOf(a.jobId);
+                    const avg = a.reviews.length ? a.reviews.reduce((s, r) => s + r.rating, 0) / a.reviews.length : 0;
+                    const sca = applicantStatusColor(a.status);
+                    const srcC = sourceColor(a.source);
+                    return (
+                      <div key={a.id} onClick={() => openCandidate(a)} className="bg-card border border-border rounded-xl p-3.5 cursor-pointer hover:border-primary/50 transition-colors space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-[12px] font-bold text-foreground truncate">{a.firstName} {a.lastName}</div>
+                            <div className="text-[10px] text-muted-foreground">{a.location || "—"}</div>
+                          </div>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: `${srcC}22`, color: srcC }}>{a.source}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground truncate">For: {job?.title || "—"}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sca}22`, color: sca }}>{a.status}</span>
+                          {avg > 0 && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={ratingColor(avg)}>{avg.toFixed(1)}</span>}
+                        </div>
+                        {a.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {a.skills.slice(0, 3).map(s => <span key={s} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>{s}</span>)}
+                          </div>
+                        )}
+                        {a.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {a.tags.slice(0, 3).map(t => <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">{t}</span>)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {poolView === "table" && filteredPool.length > 0 && (
+                <div className="bg-card border border-border rounded-xl overflow-hidden overflow-x-auto">
+                  <table className="w-full text-[11px] min-w-[900px]">
+                    <thead><tr className="border-b border-border">{["Name", "Source", "Original Job", "Skills", "Tags", "Status", "Rating", "Last Activity"].map(h => <th key={h} className="text-left p-3 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>)}</tr></thead>
+                    <tbody>
+                      {filteredPool.map(a => {
+                        const job = jobOf(a.jobId);
+                        const avg = a.reviews.length ? a.reviews.reduce((s, r) => s + r.rating, 0) / a.reviews.length : 0;
+                        const sca = applicantStatusColor(a.status);
+                        const srcC = sourceColor(a.source);
+                        return (
+                          <tr key={a.id} className="border-b border-border/30 last:border-0 hover:bg-muted/30 cursor-pointer" onClick={() => openCandidate(a)}>
+                            <td className="p-3 font-semibold text-foreground">{a.firstName} {a.lastName}</td>
+                            <td className="p-3"><span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${srcC}22`, color: srcC }}>{a.source}</span></td>
+                            <td className="p-3" onClick={e => e.stopPropagation()}>{job ? <Link to={`/team/jobs/${job.id}`} className="text-primary hover:underline">{job.title}</Link> : <span className="text-muted-foreground">—</span>}</td>
+                            <td className="p-3"><div className="flex flex-wrap gap-1">{a.skills.slice(0, 3).map(s => <span key={s} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>{s}</span>)}</div></td>
+                            <td className="p-3"><div className="flex flex-wrap gap-1">{a.tags.slice(0, 3).map(t => <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">{t}</span>)}</div></td>
+                            <td className="p-3"><span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sca}22`, color: sca }}>{a.status}</span></td>
+                            <td className="p-3">{avg > 0 ? <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={ratingColor(avg)}>{avg.toFixed(1)}</span> : <span className="text-muted-foreground/40">—</span>}</td>
+                            <td className="p-3 text-muted-foreground text-[10px]">{relativeTime(a.lastUpdatedAt)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      {/* Add to Talent Pool Dialog */}
+      <Dialog open={poolModalOpen} onOpenChange={v => { if (!v) { setPoolForm(emptyPool); } setPoolModalOpen(v); }}>
+        <DialogContent className="sm:max-w-[720px] bg-card border-border max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add to Talent Pool</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">First Name *</label><Input value={poolForm.firstName} onChange={e => setPoolForm({ ...poolForm, firstName: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Last Name *</label><Input value={poolForm.lastName} onChange={e => setPoolForm({ ...poolForm, lastName: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Email *</label><Input value={poolForm.email} onChange={e => setPoolForm({ ...poolForm, email: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Phone</label><Input value={poolForm.phone} onChange={e => setPoolForm({ ...poolForm, phone: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">LinkedIn</label><Input value={poolForm.linkedin} onChange={e => setPoolForm({ ...poolForm, linkedin: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Portfolio</label><Input value={poolForm.portfolio} onChange={e => setPoolForm({ ...poolForm, portfolio: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Location</label><Input value={poolForm.location} onChange={e => setPoolForm({ ...poolForm, location: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Source *</label>
+                <Select value={poolForm.source} onValueChange={v => setPoolForm({ ...poolForm, source: v as ApplicantSource })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{APPLICANT_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Initial Status</label>
+                <Select value={poolForm.initialStatus} onValueChange={v => setPoolForm({ ...poolForm, initialStatus: v as ApplicantStatus })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{APPLICANT_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Related Job (optional)</label>
+                <Select value={poolForm.jobId || "none"} onValueChange={v => setPoolForm({ ...poolForm, jobId: v === "none" ? "" : v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">None</SelectItem>{jobs.map(j => <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>)}</SelectContent></Select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Skills</label>
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {poolForm.skills.map(s => <span key={s} className="text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-1" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>{s}<button onClick={() => setPoolForm({ ...poolForm, skills: poolForm.skills.filter(x => x !== s) })}><X className="w-2.5 h-2.5" /></button></span>)}
+              </div>
+              <div className="flex gap-1.5">
+                <Input value={poolSkillInput} onChange={e => setPoolSkillInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addPoolSkill(); } }} placeholder="Type and press Enter..." className="h-7 text-xs" />
+                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={addPoolSkill}>Add</Button>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Tags</label>
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {poolForm.tags.map(t => <span key={t} className="text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-1 bg-muted border border-border text-foreground">{t}<button onClick={() => setPoolForm({ ...poolForm, tags: poolForm.tags.filter(x => x !== t) })}><X className="w-2.5 h-2.5" /></button></span>)}
+              </div>
+              <div className="flex gap-1.5">
+                <Input value={poolTagInput} onChange={e => setPoolTagInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addPoolTag(); } }} placeholder="Add tag..." list="pool-tag-suggestions" className="h-7 text-xs" />
+                <datalist id="pool-tag-suggestions">{TALENT_POOL_TAGS.map(t => <option key={t} value={t} />)}</datalist>
+                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={addPoolTag}>Add</Button>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Notes</label>
+              <Textarea value={poolForm.notes} onChange={e => setPoolForm({ ...poolForm, notes: e.target.value })} rows={3} placeholder="How they came to us, what role they might fit..." className="text-xs" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPoolModalOpen(false)} className="text-xs h-8">Cancel</Button>
+            <Button onClick={savePoolEntry} className="text-xs h-8">Save to Pool</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add/Edit Member Dialog */}
       <Dialog open={addModal} onOpenChange={v => { if (!v) { setEditIdx(null); resetForm(); } setAddModal(v); }}>
