@@ -13,6 +13,7 @@ import { useSalaries } from "@/contexts/SalaryContext";
 import { useUsers } from "@/contexts/UserContext";
 import { useHiring } from "@/contexts/HiringContext";
 import CandidateModal from "@/components/CandidateModal";
+import JobFormDialog, { type JobFormValues, jobToForm } from "@/components/JobFormDialog";
 import { toast } from "sonner";
 import {
   JOB_DEPARTMENTS, VENTURES_FOR_JOBS, WORK_TYPES, EMPLOYMENT_TYPES,
