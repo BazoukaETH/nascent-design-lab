@@ -201,23 +201,18 @@ const Team = () => {
   }, [jobs, applicants]);
 
   // Job actions
-  function openCreateJob() { setJobForm(emptyJob); setJobEditId(null); setJobModalOpen(true); }
-  function openEditJob(j: Job) {
-    setJobForm({ title: j.title, department: j.department, venture: j.venture, workType: j.workType, location: j.location, employmentType: j.employmentType, aboutRole: j.aboutRole, responsibilities: [...j.responsibilities], requirements: [...j.requirements], niceToHave: [...j.niceToHave], salaryRange: j.salaryRange, status: j.status, isPublic: j.isPublic });
-    setJobEditId(j.id); setJobModalOpen(true);
-  }
-  function saveJob() {
-    if (!jobForm.title.trim()) { toast.error("Title required"); return; }
+  function openCreateJob() { setJobInitial(null); setJobEditId(null); setJobModalOpen(true); }
+  function openEditJob(j: Job) { setJobInitial(jobToForm(j)); setJobEditId(j.id); setJobModalOpen(true); }
+  function saveJob(values: JobFormValues) {
     if (jobEditId) {
-      setJobs(prev => prev.map(j => j.id === jobEditId ? { ...j, ...jobForm } : j));
+      setJobs(prev => prev.map(j => j.id === jobEditId ? { ...j, ...values } : j));
       toast.success("Job updated");
     } else {
       const id = `job-${Date.now()}`;
-      const slug = jobForm.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      setJobs(prev => [...prev, { ...jobForm, id, createdAt: new Date().toISOString().slice(0, 10), createdBy: currentUser.name, viewCount: 0, shareLink: `https://waslaventures.com/careers/${slug}` }]);
+      const slug = values.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      setJobs(prev => [...prev, { ...values, id, createdAt: new Date().toISOString().slice(0, 10), createdBy: currentUser.name, viewCount: 0, shareLink: `https://waslaventures.com/careers/${slug}` }]);
       toast.success("Job created");
     }
-    setJobModalOpen(false);
   }
   function deleteJob() {
     if (!jobToDelete) return;
