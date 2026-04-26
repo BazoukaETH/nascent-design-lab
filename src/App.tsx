@@ -42,6 +42,7 @@ const App = () => (
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/finance" element={<Finance />} />
                 <Route path="/team" element={<Team />} />
+                <Route path="/team/jobs/:jobId" element={<JobDetail />} />
                 <Route path="/network" element={<Network />} />
                 <Route path="/market-intel" element={<MarketIntel />} />
                 <Route path="/initiatives" element={<Initiatives />} />
@@ -49,10 +50,11 @@ const App = () => (
                 <Route path="/documents" element={<Documents />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/settings/users/:id" element={<UserProfile />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+                </Route>
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </HiringProvider>
         </UserProvider>
       </SalaryProvider>
     </TooltipProvider>
