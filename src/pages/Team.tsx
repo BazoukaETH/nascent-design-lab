@@ -120,10 +120,10 @@ const Team = () => {
   const canEditHiring = currentUser.role === "Founder" || (currentUser.role === "Team" && currentUser.isHiringManager);
   const canSeeHiring = canEditHiring || currentUser.role === "Team";
 
-  // Hiring state
-  const [jobs, setJobs] = useState<Job[]>(JOBS_SEED);
-  const [applicants, setApplicants] = useState<Applicant[]>(APPLICANTS_SEED);
-  const [hiringSubTab, setHiringSubTab] = useState<"jobs" | "pipeline">("jobs");
+  // Hiring state (shared via context)
+  const { jobs, setJobs, applicants, setApplicants } = useHiring();
+  const navigate = useNavigate();
+  const [hiringSubTab, setHiringSubTab] = useState<"jobs" | "pipeline" | "pool">("jobs");
 
   // Job modal
   const emptyJob: Omit<Job, "id" | "createdAt" | "createdBy" | "viewCount" | "shareLink"> = {
@@ -142,14 +142,28 @@ const Team = () => {
   const [pipelineStatus, setPipelineStatus] = useState<string>("all");
   const [pipelineAppFilter, setPipelineAppFilter] = useState<string>("all");
 
-  // Candidate modal
+  // Talent Pool filters
+  const [poolSearch, setPoolSearch] = useState("");
+  const [poolSource, setPoolSource] = useState<string>("all");
+  const [poolStatus, setPoolStatus] = useState<string>("all");
+  const [poolTags, setPoolTags] = useState<string[]>([]);
+  const [poolSkills, setPoolSkills] = useState<string[]>([]);
+  const [poolAvailableOnly, setPoolAvailableOnly] = useState(false);
+  const [poolView, setPoolView] = useState<"grid" | "table">("grid");
+
+  // Add to Pool modal
+  const emptyPool = {
+    firstName: "", lastName: "", email: "", phone: "", linkedin: "", portfolio: "", location: "",
+    source: "Outreach" as ApplicantSource, skills: [] as string[], tags: [] as string[],
+    notes: "", initialStatus: "Reviewing" as ApplicantStatus, jobId: "",
+  };
+  const [poolModalOpen, setPoolModalOpen] = useState(false);
+  const [poolForm, setPoolForm] = useState(emptyPool);
+  const [poolSkillInput, setPoolSkillInput] = useState("");
+  const [poolTagInput, setPoolTagInput] = useState("");
+
+  // Candidate modal (uses shared component)
   const [candidateOpen, setCandidateOpen] = useState<string | null>(null);
-  const [candidateTab, setCandidateTab] = useState<"overview" | "reviews" | "activity">("overview");
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [reviewEditId, setReviewEditId] = useState<string | null>(null);
-  const [reviewForm, setReviewForm] = useState<{ rating: number; fit: FitLevel; experience: ExperienceLevel; recommendation: Recommendation; notes: string }>({
-    rating: 0, fit: "Good", experience: "Mid", recommendation: "Maybe", notes: "",
-  });
 
   // Team helpers
   function resetForm() { setForm({ name: "", role: "", dept: "Engineering", skills: "", bio: "", focus: "", equity: "-" }); }
