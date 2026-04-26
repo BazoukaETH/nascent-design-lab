@@ -315,17 +315,6 @@ const Team = () => {
     toast.success("Added to Talent Pool");
   }
 
-  // Repeatable list helpers for the job form
-  const updateList = (key: "responsibilities" | "requirements" | "niceToHave", idx: number, val: string) => {
-    setJobForm(prev => ({ ...prev, [key]: prev[key].map((v, i) => i === idx ? val : v) }));
-  };
-  const addListItem = (key: "responsibilities" | "requirements" | "niceToHave") => {
-    setJobForm(prev => ({ ...prev, [key]: [...prev[key], ""] }));
-  };
-  const removeListItem = (key: "responsibilities" | "requirements" | "niceToHave", idx: number) => {
-    setJobForm(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== idx) }));
-  };
-
   const tabs = [{ id: "team" as const, l: "Current Team" }, { id: "hiring" as const, l: "Hiring" }];
 
   return (
