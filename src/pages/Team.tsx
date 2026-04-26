@@ -127,14 +127,9 @@ const Team = () => {
   const [hiringSubTab, setHiringSubTab] = useState<"jobs" | "pipeline" | "pool">("jobs");
 
   // Job modal
-  const emptyJob: Omit<Job, "id" | "createdAt" | "createdBy" | "viewCount" | "shareLink"> = {
-    title: "", department: "Engineering", venture: "Wasla Solutions", workType: "On-site",
-    location: "", employmentType: "Full-time", aboutRole: "", responsibilities: [],
-    requirements: [], niceToHave: [], salaryRange: "", status: "Draft", isPublic: true,
-  };
   const [jobModalOpen, setJobModalOpen] = useState(false);
   const [jobEditId, setJobEditId] = useState<string | null>(null);
-  const [jobForm, setJobForm] = useState<typeof emptyJob>(emptyJob);
+  const [jobInitial, setJobInitial] = useState<JobFormValues | null>(null);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
 
   // Pipeline filters
