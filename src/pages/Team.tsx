@@ -594,7 +594,7 @@ const Team = () => {
                             </div>
                           </td>
                           <td className="p-3 text-muted-foreground font-mono text-[10px]">{a.email}</td>
-                          <td className="p-3 text-muted-foreground">{job?.title || "-"}</td>
+                          <td className="p-3" onClick={e => e.stopPropagation()}>{job ? <Link to={`/team/jobs/${job.id}`} className="text-primary hover:underline">{job.title}</Link> : <span className="text-muted-foreground">-</span>}</td>
                           <td className="p-3 text-muted-foreground">{formatDate(a.appliedAt)}</td>
                           <td className="p-3">
                             {avg ? (
