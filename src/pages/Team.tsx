@@ -478,22 +478,25 @@ const Team = () => {
                   const wt = workTypeColor(j.workType);
                   const sc = jobStatusColor(j.status);
                   return (
-                    <div key={j.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="text-[12px] font-bold text-foreground leading-tight truncate">{j.title}</div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{j.venture}</div>
+                    <div key={j.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-2.5 hover:border-primary/50 transition-colors">
+                      <div className="cursor-pointer flex flex-col gap-2.5" onClick={() => navigate(`/team/jobs/${j.id}`)}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-[12px] font-bold text-foreground leading-tight truncate">{j.title}</div>
+                            <div className="text-[10px] text-muted-foreground mt-0.5">{j.venture}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${wt}22`, color: wt }}>{j.workType}</span>
+                            {j.status !== "Active" && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sc}22`, color: sc }}>{j.status}</span>}
+                          </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${wt}22`, color: wt }}>{j.workType}</span>
-                          {j.status !== "Active" && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sc}22`, color: sc }}>{j.status}</span>}
+                        <div className="text-[10px] text-muted-foreground/80 flex flex-wrap gap-x-1.5">
+                          <span>{j.location}</span><span>·</span><span>{j.employmentType}</span><span>·</span><span>{relativeTime(j.createdAt)}</span>
                         </div>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground/80 flex flex-wrap gap-x-1.5">
-                        <span>{j.location}</span><span>·</span><span>{j.employmentType}</span><span>·</span><span>{relativeTime(j.createdAt)}</span>
-                      </div>
-                      <div className="border-t border-border/60 pt-2 text-[10px] text-muted-foreground flex items-center justify-between">
-                        <span>{j.viewCount} views · {applicantCount(j.id)} applicants</span>
+                        <div className="border-t border-border/60 pt-2 text-[10px] text-muted-foreground flex items-center justify-between">
+                          <span>{j.viewCount} views · {applicantCount(j.id)} applicants</span>
+                          <span className="inline-flex items-center gap-1 text-primary font-medium">View candidates <ChevronRight className="w-3 h-3" /></span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {canEditHiring && (
