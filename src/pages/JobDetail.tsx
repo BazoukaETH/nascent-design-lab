@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useHiring } from "@/contexts/HiringContext";
 import { useUsers } from "@/contexts/UserContext";
 import CandidateModal from "@/components/CandidateModal";
+import JobFormDialog, { type JobFormValues, jobToForm } from "@/components/JobFormDialog";
 import { toast } from "sonner";
 import { APPLICANT_STATUSES, sourceColor, type ApplicantStatus, type JobStatus, type WorkType } from "@/data/jobs";
 
