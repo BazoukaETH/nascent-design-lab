@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SalaryProvider } from "@/contexts/SalaryContext";
 import { UserProvider } from "@/contexts/UserContext";
+import { HiringProvider } from "@/contexts/HiringContext";
 import AppLayout from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Ventures from "./pages/Ventures";
@@ -12,6 +13,7 @@ import Pipeline from "./pages/Pipeline";
 import Clients from "./pages/Clients";
 import Finance from "./pages/Finance";
 import Team from "./pages/Team";
+import JobDetail from "./pages/JobDetail";
 import Network from "./pages/Network";
 import MarketIntel from "./pages/MarketIntel";
 import Initiatives from "./pages/Initiatives";
@@ -28,12 +30,13 @@ const App = () => (
     <TooltipProvider>
       <SalaryProvider>
         <UserProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route element={<AppLayout />}>
-                <Route path="/" element={<Dashboard />} />
+          <HiringProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route element={<AppLayout />}>
+                  <Route path="/" element={<Dashboard />} />
                 <Route path="/ventures" element={<Ventures />} />
                 <Route path="/pipeline" element={<Pipeline />} />
                 <Route path="/clients" element={<Clients />} />
