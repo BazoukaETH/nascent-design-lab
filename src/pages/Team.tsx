@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, X, Briefcase, CheckCircle, Inbox, Mail, Star, Award,
-  Share2, MoreHorizontal, Search, ExternalLink, FileText,
+  Share2, MoreHorizontal, Search, ExternalLink, ChevronRight, LayoutGrid, List, Users, UserPlus, Sparkles,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -10,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useSalaries } from "@/contexts/SalaryContext";
 import { useUsers } from "@/contexts/UserContext";
+import { useHiring } from "@/contexts/HiringContext";
+import CandidateModal from "@/components/CandidateModal";
 import { toast } from "sonner";
 import {
-  JOBS_SEED, APPLICANTS_SEED, JOB_DEPARTMENTS, VENTURES_FOR_JOBS, WORK_TYPES, EMPLOYMENT_TYPES,
-  APPLICANT_STATUSES, FIT_LEVELS, EXPERIENCE_LEVELS, RECOMMENDATIONS,
+  JOB_DEPARTMENTS, VENTURES_FOR_JOBS, WORK_TYPES, EMPLOYMENT_TYPES,
+  APPLICANT_STATUSES, APPLICANT_SOURCES, TALENT_POOL_TAGS, sourceColor,
   type Job, type Applicant, type JobStatus, type ApplicantStatus, type WorkType,
-  type EmploymentType, type FitLevel, type ExperienceLevel, type Recommendation, type Review,
+  type EmploymentType, type ApplicantSource,
 } from "@/data/jobs";
 
 interface TeamMember {
@@ -117,10 +120,10 @@ const Team = () => {
   const canEditHiring = currentUser.role === "Founder" || (currentUser.role === "Team" && currentUser.isHiringManager);
   const canSeeHiring = canEditHiring || currentUser.role === "Team";
 
-  // Hiring state
-  const [jobs, setJobs] = useState<Job[]>(JOBS_SEED);
-  const [applicants, setApplicants] = useState<Applicant[]>(APPLICANTS_SEED);
-  const [hiringSubTab, setHiringSubTab] = useState<"jobs" | "pipeline">("jobs");
+  // Hiring state (shared via context)
+  const { jobs, setJobs, applicants, setApplicants } = useHiring();
+  const navigate = useNavigate();
+  const [hiringSubTab, setHiringSubTab] = useState<"jobs" | "pipeline" | "pool">("jobs");
 
   // Job modal
   const emptyJob: Omit<Job, "id" | "createdAt" | "createdBy" | "viewCount" | "shareLink"> = {
@@ -139,14 +142,28 @@ const Team = () => {
   const [pipelineStatus, setPipelineStatus] = useState<string>("all");
   const [pipelineAppFilter, setPipelineAppFilter] = useState<string>("all");
 
-  // Candidate modal
+  // Talent Pool filters
+  const [poolSearch, setPoolSearch] = useState("");
+  const [poolSource, setPoolSource] = useState<string>("all");
+  const [poolStatus, setPoolStatus] = useState<string>("all");
+  const [poolTags, setPoolTags] = useState<string[]>([]);
+  const [poolSkills, setPoolSkills] = useState<string[]>([]);
+  const [poolAvailableOnly, setPoolAvailableOnly] = useState(false);
+  const [poolView, setPoolView] = useState<"grid" | "table">("grid");
+
+  // Add to Pool modal
+  const emptyPool = {
+    firstName: "", lastName: "", email: "", phone: "", linkedin: "", portfolio: "", location: "",
+    source: "Outreach" as ApplicantSource, skills: [] as string[], tags: [] as string[],
+    notes: "", initialStatus: "Reviewing" as ApplicantStatus, jobId: "",
+  };
+  const [poolModalOpen, setPoolModalOpen] = useState(false);
+  const [poolForm, setPoolForm] = useState(emptyPool);
+  const [poolSkillInput, setPoolSkillInput] = useState("");
+  const [poolTagInput, setPoolTagInput] = useState("");
+
+  // Candidate modal (uses shared component)
   const [candidateOpen, setCandidateOpen] = useState<string | null>(null);
-  const [candidateTab, setCandidateTab] = useState<"overview" | "reviews" | "activity">("overview");
-  const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [reviewEditId, setReviewEditId] = useState<string | null>(null);
-  const [reviewForm, setReviewForm] = useState<{ rating: number; fit: FitLevel; experience: ExperienceLevel; recommendation: Recommendation; notes: string }>({
-    rating: 0, fit: "Good", experience: "Mid", recommendation: "Maybe", notes: "",
-  });
 
   // Team helpers
   function resetForm() { setForm({ name: "", role: "", dept: "Engineering", skills: "", bio: "", focus: "", equity: "-" }); }
@@ -249,7 +266,6 @@ const Team = () => {
       } : p));
     }
     setCandidateOpen(a.id);
-    setCandidateTab("overview");
   }
   function changeApplicantStatus(id: string, status: ApplicantStatus) {
     setApplicants(prev => prev.map(a => {
@@ -262,53 +278,50 @@ const Team = () => {
     }));
   }
 
-  function openAddReview(applicantId: string, existing?: Review) {
-    if (existing) {
-      setReviewForm({ rating: existing.rating, fit: existing.fit, experience: existing.experience, recommendation: existing.recommendation, notes: existing.notes });
-      setReviewEditId(existing.id);
-    } else {
-      setReviewForm({ rating: 0, fit: "Good", experience: "Mid", recommendation: "Maybe", notes: "" });
-      setReviewEditId(null);
-    }
-    setReviewModalOpen(true);
-  }
-  function saveReview() {
-    if (!candidateOpen || reviewForm.rating < 1) { toast.error("Pick a rating"); return; }
+  // Talent Pool helpers
+  const allSkills = (() => { const set = new Set<string>(); applicants.forEach(a => a.skills.forEach(s => set.add(s))); return Array.from(set).sort(); })();
+
+  const filteredPool = applicants.filter(a => {
+    const q = poolSearch.toLowerCase();
+    const matchSearch = !q || `${a.firstName} ${a.lastName} ${a.email} ${a.skills.join(" ")}`.toLowerCase().includes(q);
+    const matchSource = poolSource === "all" || a.source === poolSource;
+    const matchStatus = poolStatus === "all" || a.status === poolStatus;
+    const matchTags = poolTags.length === 0 || poolTags.every(t => a.tags.includes(t));
+    const matchSkills = poolSkills.length === 0 || poolSkills.every(s => a.skills.includes(s));
+    const matchAvail = !poolAvailableOnly || (a.tags.includes("available") && a.considerForFutureRoles);
+    return matchSearch && matchSource && matchStatus && matchTags && matchSkills && matchAvail;
+  });
+
+  const poolKpis = (() => {
+    const total = applicants.length;
+    const future = applicants.filter(a => a.considerForFutureRoles).length;
+    const external = applicants.filter(a => a.source === "Outsourcing Partner" || a.source === "Freelancer").length;
+    const skillCounts = new Map<string, number>();
+    applicants.forEach(a => a.skills.forEach(s => skillCounts.set(s, (skillCounts.get(s) || 0) + 1)));
+    let topSkill = "—"; let topN = 0;
+    skillCounts.forEach((n, k) => { if (n > topN) { topN = n; topSkill = `${k}: ${n}`; } });
+    return { total, future, external, topSkill };
+  })();
+
+  function addPoolSkill() { const v = poolSkillInput.trim(); if (!v) return; if (!poolForm.skills.includes(v)) setPoolForm({ ...poolForm, skills: [...poolForm.skills, v] }); setPoolSkillInput(""); }
+  function addPoolTag() { const v = poolTagInput.trim().toLowerCase(); if (!v) return; if (!poolForm.tags.includes(v)) setPoolForm({ ...poolForm, tags: [...poolForm.tags, v] }); setPoolTagInput(""); }
+
+  function savePoolEntry() {
+    if (!poolForm.firstName.trim() || !poolForm.lastName.trim() || !poolForm.email.trim()) { toast.error("Name and email required"); return; }
     const ts = new Date().toISOString().slice(0, 16).replace("T", " ");
-    setApplicants(prev => prev.map(a => {
-      if (a.id !== candidateOpen) return a;
-      if (reviewEditId) {
-        return {
-          ...a,
-          reviews: a.reviews.map(r => r.id === reviewEditId ? { ...r, ...reviewForm } : r),
-          activity: [...a.activity, { id: `act-${Date.now()}`, actorName: currentUser.name, action: "edited their review", timestamp: ts }],
-        };
-      }
-      const newReview: Review = {
-        id: `rev-${Date.now()}`, reviewerId: currentUser.id, reviewerName: currentUser.name,
-        rating: reviewForm.rating, fit: reviewForm.fit, experience: reviewForm.experience,
-        recommendation: reviewForm.recommendation, notes: reviewForm.notes, createdAt: ts,
-      };
-      return {
-        ...a, reviews: [...a.reviews, newReview],
-        activity: [...a.activity, { id: `act-${Date.now()}`, actorName: currentUser.name, action: `added review (${reviewForm.rating} stars)`, timestamp: ts }],
-      };
-    }));
-    setReviewModalOpen(false);
-    toast.success(reviewEditId ? "Review updated" : "Review added");
-  }
-
-  const candidate = applicants.find(a => a.id === candidateOpen);
-  const candidateJob = candidate ? jobOf(candidate.jobId) : undefined;
-  const avgRating = candidate && candidate.reviews.length
-    ? candidate.reviews.reduce((s, r) => s + r.rating, 0) / candidate.reviews.length : 0;
-
-  function mode<T extends string>(arr: T[]): T | undefined {
-    const m = new Map<T, number>();
-    arr.forEach(v => m.set(v, (m.get(v) || 0) + 1));
-    let best: T | undefined; let bestN = 0;
-    m.forEach((n, k) => { if (n > bestN) { bestN = n; best = k; } });
-    return best;
+    const today = new Date().toISOString().slice(0, 10);
+    const id = `app-${Date.now()}`;
+    const newApp: Applicant = {
+      id, firstName: poolForm.firstName, lastName: poolForm.lastName, email: poolForm.email,
+      phone: poolForm.phone, linkedin: poolForm.linkedin, portfolio: poolForm.portfolio, location: poolForm.location,
+      jobId: poolForm.jobId, cvUrl: "#", coverNote: poolForm.notes, status: poolForm.initialStatus,
+      reviews: [], activity: [{ id: `act-${Date.now()}`, actorName: currentUser.name, action: `Added to Talent Pool by ${currentUser.name} via ${poolForm.source}`, timestamp: ts }],
+      appliedAt: today, lastUpdatedAt: today, isRead: true,
+      tags: poolForm.tags, source: poolForm.source, considerForFutureRoles: true, futureRoleNotes: poolForm.notes, skills: poolForm.skills,
+    };
+    setApplicants(prev => [...prev, newApp]);
+    setPoolModalOpen(false); setPoolForm(emptyPool);
+    toast.success("Added to Talent Pool");
   }
 
   // Repeatable list helpers for the job form
@@ -437,7 +450,7 @@ const Team = () => {
 
           {/* Sub-tabs */}
           <div className="flex gap-0 border-b border-border">
-            {[{ id: "jobs" as const, l: "Jobs" }, { id: "pipeline" as const, l: "Pipeline" }].map(t => (
+            {[{ id: "jobs" as const, l: "Jobs" }, { id: "pipeline" as const, l: "Pipeline" }, { id: "pool" as const, l: "Talent Pool" }].map(t => (
               <button key={t.id} onClick={() => setHiringSubTab(t.id)}
                 className={`px-4 py-2 text-[11px] font-medium transition-colors border-b-2 ${hiringSubTab === t.id ? "text-secondary border-secondary" : "text-muted-foreground border-transparent hover:text-foreground"}`}>
                 {t.l}
@@ -465,22 +478,25 @@ const Team = () => {
                   const wt = workTypeColor(j.workType);
                   const sc = jobStatusColor(j.status);
                   return (
-                    <div key={j.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="text-[12px] font-bold text-foreground leading-tight truncate">{j.title}</div>
-                          <div className="text-[10px] text-muted-foreground mt-0.5">{j.venture}</div>
+                    <div key={j.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-2.5 hover:border-primary/50 transition-colors">
+                      <div className="cursor-pointer flex flex-col gap-2.5" onClick={() => navigate(`/team/jobs/${j.id}`)}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-[12px] font-bold text-foreground leading-tight truncate">{j.title}</div>
+                            <div className="text-[10px] text-muted-foreground mt-0.5">{j.venture}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${wt}22`, color: wt }}>{j.workType}</span>
+                            {j.status !== "Active" && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sc}22`, color: sc }}>{j.status}</span>}
+                          </div>
                         </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${wt}22`, color: wt }}>{j.workType}</span>
-                          {j.status !== "Active" && <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sc}22`, color: sc }}>{j.status}</span>}
+                        <div className="text-[10px] text-muted-foreground/80 flex flex-wrap gap-x-1.5">
+                          <span>{j.location}</span><span>·</span><span>{j.employmentType}</span><span>·</span><span>{relativeTime(j.createdAt)}</span>
                         </div>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground/80 flex flex-wrap gap-x-1.5">
-                        <span>{j.location}</span><span>·</span><span>{j.employmentType}</span><span>·</span><span>{relativeTime(j.createdAt)}</span>
-                      </div>
-                      <div className="border-t border-border/60 pt-2 text-[10px] text-muted-foreground flex items-center justify-between">
-                        <span>{j.viewCount} views · {applicantCount(j.id)} applicants</span>
+                        <div className="border-t border-border/60 pt-2 text-[10px] text-muted-foreground flex items-center justify-between">
+                          <span>{j.viewCount} views · {applicantCount(j.id)} applicants</span>
+                          <span className="inline-flex items-center gap-1 text-primary font-medium">View candidates <ChevronRight className="w-3 h-3" /></span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {canEditHiring && (
@@ -578,7 +594,7 @@ const Team = () => {
                             </div>
                           </td>
                           <td className="p-3 text-muted-foreground font-mono text-[10px]">{a.email}</td>
-                          <td className="p-3 text-muted-foreground">{job?.title || "-"}</td>
+                          <td className="p-3" onClick={e => e.stopPropagation()}>{job ? <Link to={`/team/jobs/${job.id}`} className="text-primary hover:underline">{job.title}</Link> : <span className="text-muted-foreground">-</span>}</td>
                           <td className="p-3 text-muted-foreground">{formatDate(a.appliedAt)}</td>
                           <td className="p-3">
                             {avg ? (
@@ -607,8 +623,198 @@ const Team = () => {
               </div>
             </div>
           )}
+
+          {/* TALENT POOL */}
+          {hiringSubTab === "pool" && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <div className="text-sm font-bold text-foreground">Talent Pool</div>
+                  <div className="text-[10px] text-muted-foreground">All candidates across roles. Use this view to find people for current and future opportunities.</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-0.5 bg-muted rounded-md p-0.5">
+                    <button onClick={() => setPoolView("grid")} className={`p-1 rounded ${poolView === "grid" ? "bg-card text-foreground" : "text-muted-foreground"}`}><LayoutGrid className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => setPoolView("table")} className={`p-1 rounded ${poolView === "table" ? "bg-card text-foreground" : "text-muted-foreground"}`}><List className="w-3.5 h-3.5" /></button>
+                  </div>
+                  {canEditHiring && <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => setPoolModalOpen(true)}><UserPlus className="w-3.5 h-3.5" /> Add to Pool</Button>}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+                <KpiCard icon={Users} label="Total Pool" value={poolKpis.total} color="hsl(220,95%,47%)" />
+                <KpiCard icon={Star} label="Open to Future" value={poolKpis.future} color="hsl(160,80%,40%)" />
+                <KpiCard icon={Briefcase} label="External Talent" value={poolKpis.external} color="hsl(36,90%,53%)" />
+                <KpiCard icon={Sparkles} label="Top Skill" value={poolKpis.topSkill} color="hsl(250,60%,60%)" />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={poolSearch} onChange={e => setPoolSearch(e.target.value)} placeholder="Search name, email, skills..." className="h-8 text-xs pl-8" />
+                </div>
+                <Select value={poolSource} onValueChange={setPoolSource}>
+                  <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All Sources</SelectItem>{APPLICANT_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+                <Select value={poolStatus} onValueChange={setPoolStatus}>
+                  <SelectTrigger className="h-8 text-xs w-[140px]"><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All Statuses</SelectItem>{APPLICANT_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                </Select>
+                <button onClick={() => setPoolAvailableOnly(!poolAvailableOnly)} className="h-8 px-3 rounded-md border border-border bg-background text-[10px] flex items-center gap-2">
+                  <span className="relative inline-flex items-center w-7 h-3.5 rounded-full" style={{ background: poolAvailableOnly ? "hsl(160,80%,40%)" : "hsl(220,15%,38%,0.4)" }}>
+                    <span className="inline-block w-2.5 h-2.5 bg-white rounded-full transition-transform" style={{ transform: poolAvailableOnly ? "translateX(15px)" : "translateX(2px)" }} />
+                  </span>
+                  Available only
+                </button>
+              </div>
+
+              {/* Tag filter pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {TALENT_POOL_TAGS.slice(0, 14).map(t => {
+                  const active = poolTags.includes(t);
+                  return (
+                    <button key={t} onClick={() => setPoolTags(prev => active ? prev.filter(x => x !== t) : [...prev, t])}
+                      className={`text-[9px] px-2 py-0.5 rounded-full border transition-colors ${active ? "bg-primary/20 border-primary text-primary" : "bg-muted border-border text-muted-foreground hover:text-foreground"}`}>
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="text-[10px] text-muted-foreground">{filteredPool.length} of {applicants.length} candidates</div>
+
+              {filteredPool.length === 0 && (
+                <div className="bg-card border border-border rounded-xl p-8 text-center text-[11px] text-muted-foreground/60">Your talent pool will grow as candidates apply and as you add people through outreach.</div>
+              )}
+
+              {poolView === "grid" && filteredPool.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {filteredPool.map(a => {
+                    const job = jobOf(a.jobId);
+                    const avg = a.reviews.length ? a.reviews.reduce((s, r) => s + r.rating, 0) / a.reviews.length : 0;
+                    const sca = applicantStatusColor(a.status);
+                    const srcC = sourceColor(a.source);
+                    return (
+                      <div key={a.id} onClick={() => openCandidate(a)} className="bg-card border border-border rounded-xl p-3.5 cursor-pointer hover:border-primary/50 transition-colors space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="text-[12px] font-bold text-foreground truncate">{a.firstName} {a.lastName}</div>
+                            <div className="text-[10px] text-muted-foreground">{a.location || "—"}</div>
+                          </div>
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full shrink-0" style={{ background: `${srcC}22`, color: srcC }}>{a.source}</span>
+                        </div>
+                        <div className="text-[10px] text-muted-foreground truncate">For: {job?.title || "—"}</div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sca}22`, color: sca }}>{a.status}</span>
+                          {avg > 0 && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={ratingColor(avg)}>{avg.toFixed(1)}</span>}
+                        </div>
+                        {a.skills.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {a.skills.slice(0, 3).map(s => <span key={s} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>{s}</span>)}
+                          </div>
+                        )}
+                        {a.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {a.tags.slice(0, 3).map(t => <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">{t}</span>)}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {poolView === "table" && filteredPool.length > 0 && (
+                <div className="bg-card border border-border rounded-xl overflow-hidden overflow-x-auto">
+                  <table className="w-full text-[11px] min-w-[900px]">
+                    <thead><tr className="border-b border-border">{["Name", "Source", "Original Job", "Skills", "Tags", "Status", "Rating", "Last Activity"].map(h => <th key={h} className="text-left p-3 font-semibold text-muted-foreground/50 text-[9px] uppercase tracking-wide">{h}</th>)}</tr></thead>
+                    <tbody>
+                      {filteredPool.map(a => {
+                        const job = jobOf(a.jobId);
+                        const avg = a.reviews.length ? a.reviews.reduce((s, r) => s + r.rating, 0) / a.reviews.length : 0;
+                        const sca = applicantStatusColor(a.status);
+                        const srcC = sourceColor(a.source);
+                        return (
+                          <tr key={a.id} className="border-b border-border/30 last:border-0 hover:bg-muted/30 cursor-pointer" onClick={() => openCandidate(a)}>
+                            <td className="p-3 font-semibold text-foreground">{a.firstName} {a.lastName}</td>
+                            <td className="p-3"><span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${srcC}22`, color: srcC }}>{a.source}</span></td>
+                            <td className="p-3" onClick={e => e.stopPropagation()}>{job ? <Link to={`/team/jobs/${job.id}`} className="text-primary hover:underline">{job.title}</Link> : <span className="text-muted-foreground">—</span>}</td>
+                            <td className="p-3"><div className="flex flex-wrap gap-1">{a.skills.slice(0, 3).map(s => <span key={s} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>{s}</span>)}</div></td>
+                            <td className="p-3"><div className="flex flex-wrap gap-1">{a.tags.slice(0, 3).map(t => <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-muted border border-border text-muted-foreground">{t}</span>)}</div></td>
+                            <td className="p-3"><span className="text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${sca}22`, color: sca }}>{a.status}</span></td>
+                            <td className="p-3">{avg > 0 ? <span className="text-[10px] font-bold px-2 py-0.5 rounded" style={ratingColor(avg)}>{avg.toFixed(1)}</span> : <span className="text-muted-foreground/40">—</span>}</td>
+                            <td className="p-3 text-muted-foreground text-[10px]">{relativeTime(a.lastUpdatedAt)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
+
+      {/* Add to Talent Pool Dialog */}
+      <Dialog open={poolModalOpen} onOpenChange={v => { if (!v) { setPoolForm(emptyPool); } setPoolModalOpen(v); }}>
+        <DialogContent className="sm:max-w-[720px] bg-card border-border max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Add to Talent Pool</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">First Name *</label><Input value={poolForm.firstName} onChange={e => setPoolForm({ ...poolForm, firstName: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Last Name *</label><Input value={poolForm.lastName} onChange={e => setPoolForm({ ...poolForm, lastName: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Email *</label><Input value={poolForm.email} onChange={e => setPoolForm({ ...poolForm, email: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Phone</label><Input value={poolForm.phone} onChange={e => setPoolForm({ ...poolForm, phone: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">LinkedIn</label><Input value={poolForm.linkedin} onChange={e => setPoolForm({ ...poolForm, linkedin: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Portfolio</label><Input value={poolForm.portfolio} onChange={e => setPoolForm({ ...poolForm, portfolio: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Location</label><Input value={poolForm.location} onChange={e => setPoolForm({ ...poolForm, location: e.target.value })} className="h-8 text-xs" /></div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Source *</label>
+                <Select value={poolForm.source} onValueChange={v => setPoolForm({ ...poolForm, source: v as ApplicantSource })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{APPLICANT_SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Initial Status</label>
+                <Select value={poolForm.initialStatus} onValueChange={v => setPoolForm({ ...poolForm, initialStatus: v as ApplicantStatus })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{APPLICANT_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
+              </div>
+              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Related Job (optional)</label>
+                <Select value={poolForm.jobId || "none"} onValueChange={v => setPoolForm({ ...poolForm, jobId: v === "none" ? "" : v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="none">None</SelectItem>{jobs.map(j => <SelectItem key={j.id} value={j.id}>{j.title}</SelectItem>)}</SelectContent></Select>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Skills</label>
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {poolForm.skills.map(s => <span key={s} className="text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-1" style={{ background: "hsl(220,95%,47%,0.12)", color: "hsl(220,95%,47%)" }}>{s}<button onClick={() => setPoolForm({ ...poolForm, skills: poolForm.skills.filter(x => x !== s) })}><X className="w-2.5 h-2.5" /></button></span>)}
+              </div>
+              <div className="flex gap-1.5">
+                <Input value={poolSkillInput} onChange={e => setPoolSkillInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addPoolSkill(); } }} placeholder="Type and press Enter..." className="h-7 text-xs" />
+                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={addPoolSkill}>Add</Button>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Tags</label>
+              <div className="flex flex-wrap gap-1.5 mb-1.5">
+                {poolForm.tags.map(t => <span key={t} className="text-[10px] px-2 py-0.5 rounded-full inline-flex items-center gap-1 bg-muted border border-border text-foreground">{t}<button onClick={() => setPoolForm({ ...poolForm, tags: poolForm.tags.filter(x => x !== t) })}><X className="w-2.5 h-2.5" /></button></span>)}
+              </div>
+              <div className="flex gap-1.5">
+                <Input value={poolTagInput} onChange={e => setPoolTagInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addPoolTag(); } }} placeholder="Add tag..." list="pool-tag-suggestions" className="h-7 text-xs" />
+                <datalist id="pool-tag-suggestions">{TALENT_POOL_TAGS.map(t => <option key={t} value={t} />)}</datalist>
+                <Button size="sm" variant="outline" className="h-7 text-[10px]" onClick={addPoolTag}>Add</Button>
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] text-muted-foreground font-medium">Notes</label>
+              <Textarea value={poolForm.notes} onChange={e => setPoolForm({ ...poolForm, notes: e.target.value })} rows={3} placeholder="How they came to us, what role they might fit..." className="text-xs" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPoolModalOpen(false)} className="text-xs h-8">Cancel</Button>
+            <Button onClick={savePoolEntry} className="text-xs h-8">Save to Pool</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add/Edit Member Dialog */}
       <Dialog open={addModal} onOpenChange={v => { if (!v) { setEditIdx(null); resetForm(); } setAddModal(v); }}>
@@ -724,183 +930,7 @@ const Team = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Candidate Detail Modal */}
-      <Dialog open={!!candidateOpen} onOpenChange={() => setCandidateOpen(null)}>
-        <DialogContent className="sm:max-w-[900px] bg-card border-border max-h-[90vh] overflow-y-auto">
-          {candidate && (
-            <>
-              <DialogHeader>
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <DialogTitle className="text-lg">{candidate.firstName} {candidate.lastName}</DialogTitle>
-                    <div className="flex items-center gap-1.5 mt-2">
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${applicantStatusColor(candidate.status)}22`, color: applicantStatusColor(candidate.status) }}>{candidate.status}</span>
-                    </div>
-                    <div className="text-[10px] text-muted-foreground mt-2 flex flex-wrap gap-x-2">
-                      <span>{candidate.email}</span>
-                      {candidate.phone && <><span>·</span><span>{candidate.phone}</span></>}
-                      {candidate.location && <><span>·</span><span>{candidate.location}</span></>}
-                      <span>·</span><span>Applied {formatDate(candidate.appliedAt)}</span>
-                    </div>
-                  </div>
-                </div>
-              </DialogHeader>
-
-              <div className="flex gap-0 border-b border-border">
-                {[
-                  { id: "overview" as const, l: "Overview" },
-                  { id: "reviews" as const, l: `Reviews (${candidate.reviews.length})` },
-                  { id: "activity" as const, l: `Activity (${candidate.activity.length})` },
-                ].map(t => (
-                  <button key={t.id} onClick={() => setCandidateTab(t.id)}
-                    className={`px-4 py-2 text-[11px] font-medium transition-colors border-b-2 ${candidateTab === t.id ? "text-secondary border-secondary" : "text-muted-foreground border-transparent hover:text-foreground"}`}>
-                    {t.l}
-                  </button>
-                ))}
-              </div>
-
-              {candidateTab === "overview" && (
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                  <div className="md:col-span-3 space-y-3">
-                    <div>
-                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-1">Cover Note</div>
-                      <p className="text-[11px] italic text-muted-foreground leading-relaxed">{candidate.coverNote || "—"}</p>
-                    </div>
-                    <div>
-                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-1.5">About</div>
-                      <div className="space-y-1 text-[11px]">
-                        <div><span className="text-muted-foreground">Position: </span><span className="text-foreground font-semibold">{candidateJob?.title}</span></div>
-                        <div><span className="text-muted-foreground">Applied: </span>{formatDate(candidate.appliedAt)}</div>
-                        {candidate.location && <div><span className="text-muted-foreground">Location: </span>{candidate.location}</div>}
-                        {candidate.linkedin && <div><span className="text-muted-foreground">LinkedIn: </span><a href={candidate.linkedin} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{candidate.linkedin}</a></div>}
-                        {candidate.portfolio && <div><span className="text-muted-foreground">Portfolio: </span><a href={candidate.portfolio} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{candidate.portfolio}</a></div>}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-1.5">CV</div>
-                      <a href={candidate.cvUrl} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" className="h-8 text-xs gap-1.5"><FileText className="w-3.5 h-3.5" /> View CV</Button>
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2 space-y-3">
-                    <div className="bg-muted/40 rounded-lg p-3">
-                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-2">Current Status</div>
-                      <Select value={candidate.status} onValueChange={v => changeApplicantStatus(candidate.id, v as ApplicantStatus)} disabled={!canEditHiring}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>{APPLICANT_STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                      </Select>
-                    </div>
-
-                    {candidate.reviews.length > 0 && (
-                      <div className="bg-muted/40 rounded-lg p-3">
-                        <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold mb-2">Rating Summary</div>
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl font-bold" style={{ color: ratingColor(avgRating).bg }}>{avgRating.toFixed(1)}</span>
-                          <Stars rating={Math.round(avgRating)} size={14} />
-                        </div>
-                        <div className="text-[10px] space-y-0.5 text-muted-foreground">
-                          <div>Fit: <span className="text-foreground">{mode(candidate.reviews.map(r => r.fit))}</span></div>
-                          <div>Experience: <span className="text-foreground">{mode(candidate.reviews.map(r => r.experience))}</span></div>
-                          <div>Recommendation: <span className="text-foreground">{mode(candidate.reviews.map(r => r.recommendation))}</span></div>
-                        </div>
-                        <div className="text-[10px] text-muted-foreground/70 mt-2">{candidate.reviews.length} {candidate.reviews.length === 1 ? "review" : "reviews"} from {Array.from(new Set(candidate.reviews.map(r => r.reviewerName))).join(", ")}</div>
-                      </div>
-                    )}
-
-                    <div className="bg-muted/40 rounded-lg p-3 space-y-2">
-                      <div className="text-[9px] uppercase tracking-wide text-muted-foreground/60 font-semibold">Quick Actions</div>
-                      {canEditHiring && (
-                        <>
-                          <Button size="sm" variant="outline" className="w-full h-8 text-xs gap-1.5" onClick={() => openAddReview(candidate.id)}><Plus className="w-3 h-3" /> Add Review</Button>
-                          <Button size="sm" variant="outline" className="w-full h-8 text-xs" onClick={() => changeApplicantStatus(candidate.id, "Interview")}>Move to Interview</Button>
-                          <Button size="sm" variant="outline" className="w-full h-8 text-xs border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => { if (confirm("Reject this candidate?")) changeApplicantStatus(candidate.id, "Rejected"); }}>Reject</Button>
-                        </>
-                      )}
-                      {!canEditHiring && <p className="text-[10px] text-muted-foreground">Read-only view.</p>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {candidateTab === "reviews" && (
-                <div className="space-y-3">
-                  {canEditHiring && (
-                    <Button size="sm" className="h-8 text-xs gap-1.5" onClick={() => openAddReview(candidate.id)}><Plus className="w-3.5 h-3.5" /> Add Review</Button>
-                  )}
-                  {candidate.reviews.length === 0 && <div className="text-[11px] text-muted-foreground text-center py-6">No reviews yet.</div>}
-                  {[...candidate.reviews].reverse().map(r => (
-                    <div key={r.id} className="bg-muted/40 rounded-lg p-3">
-                      <div className="flex items-start justify-between mb-1.5">
-                        <div className="text-[11px] font-bold text-foreground">{r.reviewerName}</div>
-                        <div className="text-[9px] text-muted-foreground">{r.createdAt}</div>
-                      </div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Stars rating={r.rating} size={12} />
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={ratingColor(r.rating)}>{r.rating}/5</span>
-                      </div>
-                      <div className="text-[10px] text-muted-foreground mb-1.5">
-                        Fit: <span className="text-foreground font-medium">{r.fit}</span> · Experience: <span className="text-foreground font-medium">{r.experience}</span> · Recommend: <span className="text-foreground font-medium">{r.recommendation}</span>
-                      </div>
-                      {r.notes && <div className="text-[11px] text-muted-foreground leading-relaxed">{r.notes}</div>}
-                      {r.reviewerId === currentUser.id && (
-                        <Button size="sm" variant="outline" className="h-6 text-[10px] mt-2 gap-1" onClick={() => openAddReview(candidate.id, r)}><Pencil className="w-3 h-3" /> Edit</Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {candidateTab === "activity" && (
-                <div className="space-y-2">
-                  {[...candidate.activity].reverse().map(act => (
-                    <div key={act.id} className="flex items-start gap-2.5">
-                      <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(220,95%,47%)" }} />
-                      <div className="flex-1">
-                        <div className="text-[11px] text-foreground"><span className="font-semibold">{act.actorName}</span> {act.action}</div>
-                        <div className="text-[9px] text-muted-foreground">{act.timestamp}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Review Sub-Modal */}
-      <Dialog open={reviewModalOpen} onOpenChange={setReviewModalOpen}>
-        <DialogContent className="sm:max-w-[560px] bg-card border-border">
-          <DialogHeader><DialogTitle>{reviewEditId ? "Edit Review" : "Add Review"} for {candidate?.firstName} {candidate?.lastName}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <label className="text-[10px] text-muted-foreground font-medium">Rating *</label>
-              <Stars rating={reviewForm.rating} size={20} onChange={r => setReviewForm({ ...reviewForm, rating: r })} />
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Fit *</label>
-                <Select value={reviewForm.fit} onValueChange={v => setReviewForm({ ...reviewForm, fit: v as FitLevel })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{FIT_LEVELS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
-              </div>
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Experience *</label>
-                <Select value={reviewForm.experience} onValueChange={v => setReviewForm({ ...reviewForm, experience: v as ExperienceLevel })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{EXPERIENCE_LEVELS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
-              </div>
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Recommend *</label>
-                <Select value={reviewForm.recommendation} onValueChange={v => setReviewForm({ ...reviewForm, recommendation: v as Recommendation })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{RECOMMENDATIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] text-muted-foreground font-medium">Notes</label>
-              <Textarea value={reviewForm.notes} onChange={e => setReviewForm({ ...reviewForm, notes: e.target.value })} rows={4} placeholder="Any specific observations, concerns, or strengths..." className="text-xs" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setReviewModalOpen(false)} className="text-xs h-8">Cancel</Button>
-            <Button onClick={saveReview} className="text-xs h-8">Submit Review</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <CandidateModal candidateId={candidateOpen} onClose={() => setCandidateOpen(null)} />
     </div>
   );
 };
