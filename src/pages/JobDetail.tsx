@@ -176,7 +176,7 @@ export default function JobDetail() {
           </div>
           {canEditHiring && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => navigate("/team", { state: { editJobId: job.id } })}><Pencil className="w-3 h-3" /> Edit Job</Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setEditOpen(true)}><Pencil className="w-3 h-3" /> Edit Job</Button>
               {job.status === "Active" && <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => toggleStatus("Paused")}><Pause className="w-3 h-3" /> Pause</Button>}
               {job.status === "Paused" && <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => toggleStatus("Active")}><Play className="w-3 h-3" /> Resume</Button>}
               {job.status !== "Closed" && <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => toggleStatus("Closed")}><X className="w-3 h-3" /> Close Job</Button>}
