@@ -266,7 +266,6 @@ const Team = () => {
       } : p));
     }
     setCandidateOpen(a.id);
-    setCandidateTab("overview");
   }
   function changeApplicantStatus(id: string, status: ApplicantStatus) {
     setApplicants(prev => prev.map(a => {
@@ -279,53 +278,50 @@ const Team = () => {
     }));
   }
 
-  function openAddReview(applicantId: string, existing?: Review) {
-    if (existing) {
-      setReviewForm({ rating: existing.rating, fit: existing.fit, experience: existing.experience, recommendation: existing.recommendation, notes: existing.notes });
-      setReviewEditId(existing.id);
-    } else {
-      setReviewForm({ rating: 0, fit: "Good", experience: "Mid", recommendation: "Maybe", notes: "" });
-      setReviewEditId(null);
-    }
-    setReviewModalOpen(true);
-  }
-  function saveReview() {
-    if (!candidateOpen || reviewForm.rating < 1) { toast.error("Pick a rating"); return; }
+  // Talent Pool helpers
+  const allSkills = (() => { const set = new Set<string>(); applicants.forEach(a => a.skills.forEach(s => set.add(s))); return Array.from(set).sort(); })();
+
+  const filteredPool = applicants.filter(a => {
+    const q = poolSearch.toLowerCase();
+    const matchSearch = !q || `${a.firstName} ${a.lastName} ${a.email} ${a.skills.join(" ")}`.toLowerCase().includes(q);
+    const matchSource = poolSource === "all" || a.source === poolSource;
+    const matchStatus = poolStatus === "all" || a.status === poolStatus;
+    const matchTags = poolTags.length === 0 || poolTags.every(t => a.tags.includes(t));
+    const matchSkills = poolSkills.length === 0 || poolSkills.every(s => a.skills.includes(s));
+    const matchAvail = !poolAvailableOnly || (a.tags.includes("available") && a.considerForFutureRoles);
+    return matchSearch && matchSource && matchStatus && matchTags && matchSkills && matchAvail;
+  });
+
+  const poolKpis = (() => {
+    const total = applicants.length;
+    const future = applicants.filter(a => a.considerForFutureRoles).length;
+    const external = applicants.filter(a => a.source === "Outsourcing Partner" || a.source === "Freelancer").length;
+    const skillCounts = new Map<string, number>();
+    applicants.forEach(a => a.skills.forEach(s => skillCounts.set(s, (skillCounts.get(s) || 0) + 1)));
+    let topSkill = "—"; let topN = 0;
+    skillCounts.forEach((n, k) => { if (n > topN) { topN = n; topSkill = `${k}: ${n}`; } });
+    return { total, future, external, topSkill };
+  })();
+
+  function addPoolSkill() { const v = poolSkillInput.trim(); if (!v) return; if (!poolForm.skills.includes(v)) setPoolForm({ ...poolForm, skills: [...poolForm.skills, v] }); setPoolSkillInput(""); }
+  function addPoolTag() { const v = poolTagInput.trim().toLowerCase(); if (!v) return; if (!poolForm.tags.includes(v)) setPoolForm({ ...poolForm, tags: [...poolForm.tags, v] }); setPoolTagInput(""); }
+
+  function savePoolEntry() {
+    if (!poolForm.firstName.trim() || !poolForm.lastName.trim() || !poolForm.email.trim()) { toast.error("Name and email required"); return; }
     const ts = new Date().toISOString().slice(0, 16).replace("T", " ");
-    setApplicants(prev => prev.map(a => {
-      if (a.id !== candidateOpen) return a;
-      if (reviewEditId) {
-        return {
-          ...a,
-          reviews: a.reviews.map(r => r.id === reviewEditId ? { ...r, ...reviewForm } : r),
-          activity: [...a.activity, { id: `act-${Date.now()}`, actorName: currentUser.name, action: "edited their review", timestamp: ts }],
-        };
-      }
-      const newReview: Review = {
-        id: `rev-${Date.now()}`, reviewerId: currentUser.id, reviewerName: currentUser.name,
-        rating: reviewForm.rating, fit: reviewForm.fit, experience: reviewForm.experience,
-        recommendation: reviewForm.recommendation, notes: reviewForm.notes, createdAt: ts,
-      };
-      return {
-        ...a, reviews: [...a.reviews, newReview],
-        activity: [...a.activity, { id: `act-${Date.now()}`, actorName: currentUser.name, action: `added review (${reviewForm.rating} stars)`, timestamp: ts }],
-      };
-    }));
-    setReviewModalOpen(false);
-    toast.success(reviewEditId ? "Review updated" : "Review added");
-  }
-
-  const candidate = applicants.find(a => a.id === candidateOpen);
-  const candidateJob = candidate ? jobOf(candidate.jobId) : undefined;
-  const avgRating = candidate && candidate.reviews.length
-    ? candidate.reviews.reduce((s, r) => s + r.rating, 0) / candidate.reviews.length : 0;
-
-  function mode<T extends string>(arr: T[]): T | undefined {
-    const m = new Map<T, number>();
-    arr.forEach(v => m.set(v, (m.get(v) || 0) + 1));
-    let best: T | undefined; let bestN = 0;
-    m.forEach((n, k) => { if (n > bestN) { bestN = n; best = k; } });
-    return best;
+    const today = new Date().toISOString().slice(0, 10);
+    const id = `app-${Date.now()}`;
+    const newApp: Applicant = {
+      id, firstName: poolForm.firstName, lastName: poolForm.lastName, email: poolForm.email,
+      phone: poolForm.phone, linkedin: poolForm.linkedin, portfolio: poolForm.portfolio, location: poolForm.location,
+      jobId: poolForm.jobId, cvUrl: "#", coverNote: poolForm.notes, status: poolForm.initialStatus,
+      reviews: [], activity: [{ id: `act-${Date.now()}`, actorName: currentUser.name, action: `Added to Talent Pool by ${currentUser.name} via ${poolForm.source}`, timestamp: ts }],
+      appliedAt: today, lastUpdatedAt: today, isRead: true,
+      tags: poolForm.tags, source: poolForm.source, considerForFutureRoles: true, futureRoleNotes: poolForm.notes, skills: poolForm.skills,
+    };
+    setApplicants(prev => [...prev, newApp]);
+    setPoolModalOpen(false); setPoolForm(emptyPool);
+    toast.success("Added to Talent Pool");
   }
 
   // Repeatable list helpers for the job form
