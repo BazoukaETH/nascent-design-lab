@@ -419,6 +419,16 @@ export default function JobDetail() {
       )}
 
       <CandidateModal candidateId={openCandidateId} onClose={() => setOpenCandidateId(null)} />
+      <JobFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        initial={jobToForm(job)}
+        mode="edit"
+        onSave={(values: JobFormValues) => {
+          setJobs(prev => prev.map(j => j.id === job.id ? { ...j, ...values } : j));
+          toast.success("Job updated");
+        }}
+      />
     </div>
   );
 }
