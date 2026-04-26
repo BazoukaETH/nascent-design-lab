@@ -450,7 +450,7 @@ const Team = () => {
 
           {/* Sub-tabs */}
           <div className="flex gap-0 border-b border-border">
-            {[{ id: "jobs" as const, l: "Jobs" }, { id: "pipeline" as const, l: "Pipeline" }].map(t => (
+            {[{ id: "jobs" as const, l: "Jobs" }, { id: "pipeline" as const, l: "Pipeline" }, { id: "pool" as const, l: "Talent Pool" }].map(t => (
               <button key={t.id} onClick={() => setHiringSubTab(t.id)}
                 className={`px-4 py-2 text-[11px] font-medium transition-colors border-b-2 ${hiringSubTab === t.id ? "text-secondary border-secondary" : "text-muted-foreground border-transparent hover:text-foreground"}`}>
                 {t.l}
