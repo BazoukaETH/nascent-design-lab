@@ -63,6 +63,7 @@ export default function JobDetail() {
   const [ratingFilter, setRatingFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [openCandidateId, setOpenCandidateId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (!canSeeHiring) {
     return <div className="bg-card border border-border rounded-xl p-8 text-center"><p className="text-[11px] text-muted-foreground">You don't have permission to view the Hiring section.</p></div>;
