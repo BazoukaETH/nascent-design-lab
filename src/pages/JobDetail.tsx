@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useHiring } from "@/contexts/HiringContext";
 import { useUsers } from "@/contexts/UserContext";
 import CandidateModal from "@/components/CandidateModal";
+import JobFormDialog, { type JobFormValues, jobToForm } from "@/components/JobFormDialog";
 import { toast } from "sonner";
 import { APPLICANT_STATUSES, sourceColor, type ApplicantStatus, type JobStatus, type WorkType } from "@/data/jobs";
 
@@ -62,6 +63,7 @@ export default function JobDetail() {
   const [ratingFilter, setRatingFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
   const [openCandidateId, setOpenCandidateId] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (!canSeeHiring) {
     return <div className="bg-card border border-border rounded-xl p-8 text-center"><p className="text-[11px] text-muted-foreground">You don't have permission to view the Hiring section.</p></div>;
@@ -174,7 +176,7 @@ export default function JobDetail() {
           </div>
           {canEditHiring && (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => navigate("/team", { state: { editJobId: job.id } })}><Pencil className="w-3 h-3" /> Edit Job</Button>
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => setEditOpen(true)}><Pencil className="w-3 h-3" /> Edit Job</Button>
               {job.status === "Active" && <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => toggleStatus("Paused")}><Pause className="w-3 h-3" /> Pause</Button>}
               {job.status === "Paused" && <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={() => toggleStatus("Active")}><Play className="w-3 h-3" /> Resume</Button>}
               {job.status !== "Closed" && <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10" onClick={() => toggleStatus("Closed")}><X className="w-3 h-3" /> Close Job</Button>}
@@ -417,6 +419,16 @@ export default function JobDetail() {
       )}
 
       <CandidateModal candidateId={openCandidateId} onClose={() => setOpenCandidateId(null)} />
+      <JobFormDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        initial={jobToForm(job)}
+        mode="edit"
+        onSave={(values: JobFormValues) => {
+          setJobs(prev => prev.map(j => j.id === job.id ? { ...j, ...values } : j));
+          toast.success("Job updated");
+        }}
+      />
     </div>
   );
 }

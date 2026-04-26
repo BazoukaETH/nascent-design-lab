@@ -13,6 +13,7 @@ import { useSalaries } from "@/contexts/SalaryContext";
 import { useUsers } from "@/contexts/UserContext";
 import { useHiring } from "@/contexts/HiringContext";
 import CandidateModal from "@/components/CandidateModal";
+import JobFormDialog, { type JobFormValues, jobToForm } from "@/components/JobFormDialog";
 import { toast } from "sonner";
 import {
   JOB_DEPARTMENTS, VENTURES_FOR_JOBS, WORK_TYPES, EMPLOYMENT_TYPES,
@@ -126,14 +127,9 @@ const Team = () => {
   const [hiringSubTab, setHiringSubTab] = useState<"jobs" | "pipeline" | "pool">("jobs");
 
   // Job modal
-  const emptyJob: Omit<Job, "id" | "createdAt" | "createdBy" | "viewCount" | "shareLink"> = {
-    title: "", department: "Engineering", venture: "Wasla Solutions", workType: "On-site",
-    location: "", employmentType: "Full-time", aboutRole: "", responsibilities: [],
-    requirements: [], niceToHave: [], salaryRange: "", status: "Draft", isPublic: true,
-  };
   const [jobModalOpen, setJobModalOpen] = useState(false);
   const [jobEditId, setJobEditId] = useState<string | null>(null);
-  const [jobForm, setJobForm] = useState<typeof emptyJob>(emptyJob);
+  const [jobInitial, setJobInitial] = useState<JobFormValues | null>(null);
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
 
   // Pipeline filters
@@ -205,23 +201,18 @@ const Team = () => {
   }, [jobs, applicants]);
 
   // Job actions
-  function openCreateJob() { setJobForm(emptyJob); setJobEditId(null); setJobModalOpen(true); }
-  function openEditJob(j: Job) {
-    setJobForm({ title: j.title, department: j.department, venture: j.venture, workType: j.workType, location: j.location, employmentType: j.employmentType, aboutRole: j.aboutRole, responsibilities: [...j.responsibilities], requirements: [...j.requirements], niceToHave: [...j.niceToHave], salaryRange: j.salaryRange, status: j.status, isPublic: j.isPublic });
-    setJobEditId(j.id); setJobModalOpen(true);
-  }
-  function saveJob() {
-    if (!jobForm.title.trim()) { toast.error("Title required"); return; }
+  function openCreateJob() { setJobInitial(null); setJobEditId(null); setJobModalOpen(true); }
+  function openEditJob(j: Job) { setJobInitial(jobToForm(j)); setJobEditId(j.id); setJobModalOpen(true); }
+  function saveJob(values: JobFormValues) {
     if (jobEditId) {
-      setJobs(prev => prev.map(j => j.id === jobEditId ? { ...j, ...jobForm } : j));
+      setJobs(prev => prev.map(j => j.id === jobEditId ? { ...j, ...values } : j));
       toast.success("Job updated");
     } else {
       const id = `job-${Date.now()}`;
-      const slug = jobForm.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-      setJobs(prev => [...prev, { ...jobForm, id, createdAt: new Date().toISOString().slice(0, 10), createdBy: currentUser.name, viewCount: 0, shareLink: `https://waslaventures.com/careers/${slug}` }]);
+      const slug = values.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      setJobs(prev => [...prev, { ...values, id, createdAt: new Date().toISOString().slice(0, 10), createdBy: currentUser.name, viewCount: 0, shareLink: `https://waslaventures.com/careers/${slug}` }]);
       toast.success("Job created");
     }
-    setJobModalOpen(false);
   }
   function deleteJob() {
     if (!jobToDelete) return;
@@ -323,17 +314,6 @@ const Team = () => {
     setPoolModalOpen(false); setPoolForm(emptyPool);
     toast.success("Added to Talent Pool");
   }
-
-  // Repeatable list helpers for the job form
-  const updateList = (key: "responsibilities" | "requirements" | "niceToHave", idx: number, val: string) => {
-    setJobForm(prev => ({ ...prev, [key]: prev[key].map((v, i) => i === idx ? val : v) }));
-  };
-  const addListItem = (key: "responsibilities" | "requirements" | "niceToHave") => {
-    setJobForm(prev => ({ ...prev, [key]: [...prev[key], ""] }));
-  };
-  const removeListItem = (key: "responsibilities" | "requirements" | "niceToHave", idx: number) => {
-    setJobForm(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== idx) }));
-  };
 
   const tabs = [{ id: "team" as const, l: "Current Team" }, { id: "hiring" as const, l: "Hiring" }];
 
@@ -855,66 +835,13 @@ const Team = () => {
       </Dialog>
 
       {/* Create/Edit Job Dialog */}
-      <Dialog open={jobModalOpen} onOpenChange={setJobModalOpen}>
-        <DialogContent className="sm:max-w-[720px] bg-card border-border max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{jobEditId ? "Edit Job" : "Create Job"}</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Job Title *</label><Input value={jobForm.title} onChange={e => setJobForm({ ...jobForm, title: e.target.value })} className="h-8 text-xs" /></div>
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Department *</label>
-                <Select value={jobForm.department} onValueChange={v => setJobForm({ ...jobForm, department: v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{JOB_DEPARTMENTS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
-              </div>
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Venture *</label>
-                <Select value={jobForm.venture} onValueChange={v => setJobForm({ ...jobForm, venture: v })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{VENTURES_FOR_JOBS.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
-              </div>
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Work Type *</label>
-                <Select value={jobForm.workType} onValueChange={v => setJobForm({ ...jobForm, workType: v as WorkType })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{WORK_TYPES.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
-              </div>
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Location *</label><Input value={jobForm.location} onChange={e => setJobForm({ ...jobForm, location: e.target.value })} className="h-8 text-xs" /></div>
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Employment Type *</label>
-                <Select value={jobForm.employmentType} onValueChange={v => setJobForm({ ...jobForm, employmentType: v as EmploymentType })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{EMPLOYMENT_TYPES.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
-              </div>
-              <div className="space-y-1 col-span-2"><label className="text-[10px] text-muted-foreground font-medium">Salary Range</label><Input value={jobForm.salaryRange} onChange={e => setJobForm({ ...jobForm, salaryRange: e.target.value })} placeholder="e.g. 25K-40K EGP" className="h-8 text-xs" /></div>
-            </div>
-
-            <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">About the Role *</label><Textarea value={jobForm.aboutRole} onChange={e => setJobForm({ ...jobForm, aboutRole: e.target.value })} rows={4} className="text-xs" /></div>
-
-            {(["responsibilities", "requirements", "niceToHave"] as const).map(key => (
-              <div key={key} className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[10px] text-muted-foreground font-medium capitalize">{key === "niceToHave" ? "Nice to Have" : key}</label>
-                  <button type="button" onClick={() => addListItem(key)} className="text-[10px] text-primary hover:underline">+ Add</button>
-                </div>
-                {jobForm[key].map((v, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <Input value={v} onChange={e => updateList(key, i, e.target.value)} className="h-7 text-xs" />
-                    <button type="button" onClick={() => removeListItem(key, i)} className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
-                  </div>
-                ))}
-              </div>
-            ))}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><label className="text-[10px] text-muted-foreground font-medium">Status</label>
-                <Select value={jobForm.status} onValueChange={v => setJobForm({ ...jobForm, status: v as JobStatus })}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent>{["Draft", "Active", "Paused"].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] text-muted-foreground font-medium">Public Listing</label>
-                <button onClick={() => setJobForm({ ...jobForm, isPublic: !jobForm.isPublic })} className="h-8 px-3 rounded-md border border-border bg-background text-xs flex items-center gap-2">
-                  <span className="relative inline-flex items-center w-8 h-4 rounded-full transition-colors" style={{ background: jobForm.isPublic ? "hsl(160,80%,40%)" : "hsl(220,15%,38%,0.4)" }}>
-                    <span className="inline-block w-3 h-3 bg-white rounded-full transition-transform" style={{ transform: jobForm.isPublic ? "translateX(18px)" : "translateX(2px)" }} />
-                  </span>
-                  {jobForm.isPublic ? "Yes" : "No"}
-                </button>
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="sticky bottom-0 bg-card pt-3">
-            <Button variant="outline" onClick={() => setJobModalOpen(false)} className="text-xs h-8">Cancel</Button>
-            <Button onClick={saveJob} className="text-xs h-8">{jobEditId ? "Save Changes" : "Save Job"}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <JobFormDialog
+        open={jobModalOpen}
+        onOpenChange={setJobModalOpen}
+        initial={jobInitial}
+        mode={jobEditId ? "edit" : "create"}
+        onSave={saveJob}
+      />
 
       {/* Delete Job */}
       <Dialog open={!!jobToDelete} onOpenChange={() => setJobToDelete(null)}>

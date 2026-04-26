@@ -20,14 +20,22 @@ export interface AppUser {
 }
 
 const SEED_USERS: AppUser[] = [
-  { id: "u1", name: "Bassel El Aroussy", email: "bassel@waslaventures.com", role: "Founder", twoFA: true, status: "Active", lastActive: "Today", invited: "" },
-  { id: "u2", name: "Moaz El Sawy", email: "", role: "Founder", twoFA: false, status: "Active", lastActive: "Today", invited: "" },
-  { id: "u3", name: "Youssef El Shazly", email: "", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "" },
-  { id: "u4", name: "Hussein Shahbender", email: "", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "" },
-  { id: "u5", name: "Mohamed El Hagry", email: "", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "" },
-  { id: "u6", name: "Ali Amir", email: "", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "" },
-  { id: "u7", name: "Saif Nosair", email: "", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "" },
-  { id: "u8", name: "Ahmed Nehad", email: "", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "" },
+  { id: "u1", name: "Bassel El Aroussy", email: "bassel@waslaventures.com", role: "Founder", twoFA: true, status: "Active", lastActive: "Today", invited: "",
+    phone: "+20 100 000 0001", position: "Co-Founder & CEO", notes: "Leads strategy, fundraising, and ecosystem direction.", isHiringManager: true },
+  { id: "u2", name: "Moaz El Sawy", email: "moaz@waslaventures.com", role: "Founder", twoFA: false, status: "Active", lastActive: "Today", invited: "",
+    phone: "+20 100 000 0002", position: "Co-Founder & COO", notes: "Operations, finance oversight, and venture execution.", isHiringManager: true },
+  { id: "u3", name: "Youssef El Shazly", email: "youssef@waslaventures.com", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "",
+    phone: "+20 100 000 0003", position: "Head of Product", notes: "Owns product roadmap across active ventures.", isHiringManager: true },
+  { id: "u4", name: "Hussein Shahbender", email: "hussein@waslaventures.com", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "",
+    phone: "+20 100 000 0004", position: "Engineering Lead", notes: "Tech architecture and engineering hiring." },
+  { id: "u5", name: "Mohamed El Hagry", email: "hagry@waslaventures.com", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "",
+    phone: "+20 100 000 0005", position: "Design Lead", notes: "Brand, product design, and creative direction." },
+  { id: "u6", name: "Ali Amir", email: "ali@waslaventures.com", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "",
+    phone: "+20 100 000 0006", position: "Growth & Marketing", notes: "Performance marketing and partnerships." },
+  { id: "u7", name: "Saif Nosair", email: "saif@waslaventures.com", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "",
+    phone: "+20 100 000 0007", position: "Business Development", notes: "Client pipeline and venture partnerships." },
+  { id: "u8", name: "Ahmed Nehad", email: "nehad@waslaventures.com", role: "Team", twoFA: false, status: "Active", lastActive: "", invited: "",
+    phone: "+20 100 000 0008", position: "Finance & Operations", notes: "Accounting, salaries, and operational reporting." },
 ];
 
 interface UserContextValue {
