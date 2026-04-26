@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import {
   Plus, Pencil, Trash2, X, Briefcase, CheckCircle, Inbox, Mail, Star, Award,
-  Share2, MoreHorizontal, Search, ExternalLink, FileText,
+  Share2, MoreHorizontal, Search, ExternalLink, ChevronRight, LayoutGrid, List, Users, UserPlus, Sparkles,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -10,12 +11,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useSalaries } from "@/contexts/SalaryContext";
 import { useUsers } from "@/contexts/UserContext";
+import { useHiring } from "@/contexts/HiringContext";
+import CandidateModal from "@/components/CandidateModal";
 import { toast } from "sonner";
 import {
-  JOBS_SEED, APPLICANTS_SEED, JOB_DEPARTMENTS, VENTURES_FOR_JOBS, WORK_TYPES, EMPLOYMENT_TYPES,
-  APPLICANT_STATUSES, FIT_LEVELS, EXPERIENCE_LEVELS, RECOMMENDATIONS,
+  JOB_DEPARTMENTS, VENTURES_FOR_JOBS, WORK_TYPES, EMPLOYMENT_TYPES,
+  APPLICANT_STATUSES, APPLICANT_SOURCES, TALENT_POOL_TAGS, sourceColor,
   type Job, type Applicant, type JobStatus, type ApplicantStatus, type WorkType,
-  type EmploymentType, type FitLevel, type ExperienceLevel, type Recommendation, type Review,
+  type EmploymentType, type ApplicantSource,
 } from "@/data/jobs";
 
 interface TeamMember {
